@@ -47,9 +47,14 @@ export default function GutBrainIndexSection() {
             </div>
           </div>
 
-          <Button variant="primary" size="large" className="w-full md:w-auto">
+          <a
+            href="https://curago.in/gbsi/quiz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-primary-600/50 w-full md:w-auto"
+          >
             Start My Free Gut Brain Sensitivity Index
-          </Button>
+          </a>
         </div>
 
         <p className="text-sm text-primary-700">
