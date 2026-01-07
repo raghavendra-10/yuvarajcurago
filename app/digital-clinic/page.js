@@ -4,6 +4,7 @@ import { useState } from "react";
 import Section from "@/components/Section";
 import Footer from "@/components/Footer";
 import ApplicationModal from "@/components/ApplicationModal";
+import RazorpayButton from "@/components/RazorpayButton";
 
 export default function DigitalClinicPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,12 +95,7 @@ export default function DigitalClinicPage() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="https://wa.me/"
-                  className="block w-full bg-primary-600 hover:bg-primary-700 text-white text-center font-semibold py-3 md:py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm md:text-base"
-                >
-                  Book Now
-                </a>
+                <RazorpayButton paymentButtonId="pl_S16kCY67frwiRs" />
               </div>
 
               {/* Follow-up Consultation */}
@@ -139,12 +135,7 @@ export default function DigitalClinicPage() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="https://wa.me/"
-                  className="block w-full bg-accent-600 hover:bg-accent-700 text-white text-center font-semibold py-3 md:py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm md:text-base"
-                >
-                  Book Now
-                </a>
+                <RazorpayButton paymentButtonId="pl_S16maiOqi09QAb" />
               </div>
             </div>
           </div>
@@ -167,7 +158,7 @@ export default function DigitalClinicPage() {
                   For cases that require physical examination or pre-surgical workup. Get priority access to the clinic in Mumbai.
                 </p>
                 <a
-                  href="https://wa.me/"
+                  href="https://wa.me/917021227203"
                   className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold px-5 md:px-8 py-3 md:py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm md:text-base w-full md:w-auto"
                 >
                   <svg className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
