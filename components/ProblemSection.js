@@ -41,39 +41,35 @@ export default function ProblemSection() {
   ];
 
   return (
-    <Section bgColor="bg-gray-50" id="problems">
-      <div className="text-center mb-16">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+    <Section bgColor="bg-beige-300" id="problems">
+      <div className="text-center mb-8 md:mb-12 px-4">
+        <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-primary-900 mb-4 md:mb-6 leading-tight">
           Are you tired of being told{" "}
           <span className="text-primary-600">'Everything is Normal'?</span>
         </h2>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <p className="text-base md:text-lg lg:text-xl text-primary-800 max-w-3xl mx-auto mb-6 md:mb-8 leading-relaxed">
           You've had the endoscopies. You've changed your diet. Yet, you still struggle with:
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        {problems.map((problem, index) => (
-          <div
-            key={index}
-            className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-slide-up"
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-16 h-16 bg-primary-100 rounded-lg flex items-center justify-center text-primary-600">
+      <div className="max-w-4xl mx-auto bg-white p-5 md:p-8 lg:p-12 rounded-xl md:rounded-2xl shadow-xl border border-primary-100">
+        <div className="space-y-5 md:space-y-8">
+          {problems.map((problem, index) => (
+            <div key={index} className="flex items-start gap-4 md:gap-6">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-accent-100 rounded-lg flex items-center justify-center text-primary-600">
                 {problem.icon}
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base md:text-lg lg:text-xl font-bold text-primary-900 mb-1 md:mb-2 break-words">
                   {problem.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-sm md:text-base text-primary-800 leading-relaxed break-words">
                   {problem.description}
                 </p>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </Section>
   );

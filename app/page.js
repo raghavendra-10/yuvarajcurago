@@ -4,7 +4,6 @@ import GutBrainIndexSection from "@/components/GutBrainIndexSection";
 import EducationalSection from "@/components/EducationalSection";
 import PriorityCircleSection from "@/components/PriorityCircleSection";
 import AboutDoctorSection from "@/components/AboutDoctorSection";
-import ForumSection from "@/components/ForumSection";
 import FinalCTASection from "@/components/FinalCTASection";
 import Footer from "@/components/Footer";
 
@@ -17,7 +16,6 @@ export default function Home() {
       <EducationalSection />
       <PriorityCircleSection />
       <AboutDoctorSection />
-      <ForumSection />
       <FinalCTASection />
       <Footer />
     </main>

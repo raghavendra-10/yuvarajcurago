@@ -1,4 +1,5 @@
 import Section from "./Section";
+import Image from "next/image";
 
 export default function AboutDoctorSection() {
   const credentials = [
@@ -43,18 +44,20 @@ export default function AboutDoctorSection() {
   ];
 
   return (
-    <Section bgColor="bg-gray-50" id="about-doctor">
+    <Section bgColor="bg-beige-300" id="about-doctor">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        {/* Left side - Image placeholder */}
+        {/* Left side - Doctor Image */}
         <div className="order-2 lg:order-1">
           <div className="relative">
-            <div className="aspect-[4/5] bg-gray-200 rounded-2xl overflow-hidden shadow-2xl">
-              {/* Placeholder for doctor image */}
-              <div className="w-full h-full flex items-center justify-center bg-primary-50">
-                <svg className="w-48 h-48 text-primary-200" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
+            <div className="aspect-[4/5] bg-beige-200 rounded-2xl overflow-hidden shadow-2xl border border-primary-200">
+              <Image
+                src="/profile.svg"
+                alt="Dr. Yuvaraj T - Surgical Gastroenterologist"
+                width={600}
+                height={750}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
             {/* Decorative element */}
             <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-accent-400 rounded-full opacity-20"></div>
@@ -63,24 +66,24 @@ export default function AboutDoctorSection() {
 
         {/* Right side - Content */}
         <div className="order-1 lg:order-2">
-          <div className="inline-block bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
+          <div className="inline-block bg-accent-100 text-primary-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
             About Your Doctor
           </div>
 
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-900 mb-6">
             Dr. Yuvaraj T
           </h2>
 
           <div className="space-y-4 mb-8">
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-primary-800 leading-relaxed">
               I am Dr Yuvaraj T, a <strong>Surgical Gastroenterologist</strong> trained from KEM Hospital Mumbai and currently based in Mumbai.
             </p>
 
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-primary-800 leading-relaxed">
               While I specialize in advanced laparoscopic and GI surgeries, I realized that many patients don't need surgery—they need <strong>continuity of care</strong>.
             </p>
 
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-primary-800 leading-relaxed">
               I created this system to bridge the gap between 'normal' reports and a better quality of life. Because your symptoms deserve answers, not dismissal.
             </p>
           </div>
@@ -90,15 +93,15 @@ export default function AboutDoctorSection() {
             {credentials.map((credential, index) => (
               <div
                 key={index}
-                className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-primary-100"
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 text-primary-600">
                     {credential.icon}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">{credential.title}</p>
-                    <p className="font-semibold text-gray-900">{credential.value}</p>
+                    <p className="text-sm text-primary-600 mb-1">{credential.title}</p>
+                    <p className="font-semibold text-primary-900">{credential.value}</p>
                   </div>
                 </div>
               </div>
@@ -106,8 +109,8 @@ export default function AboutDoctorSection() {
           </div>
 
           {/* Quote */}
-          <div className="bg-primary-50 border-l-4 border-primary-600 p-6 rounded-r-lg">
-            <p className="text-gray-700 italic">
+          <div className="bg-accent-50 border-l-4 border-primary-600 p-6 rounded-r-lg">
+            <p className="text-primary-800 italic">
               "Your gut health journey deserves more than just scans and medications. It deserves understanding, partnership, and continuous expert support."
             </p>
             <p className="text-primary-700 font-semibold mt-2">— Dr. Yuvaraj T</p>

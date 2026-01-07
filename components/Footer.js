@@ -2,21 +2,21 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-primary-900 text-beige-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold text-white mb-4">
+            <h3 className="text-2xl font-bold text-beige-300 mb-4">
               Priority Circle 365
             </h3>
-            <p className="text-gray-400 mb-4 max-w-md">
+            <p className="text-beige-200 mb-4 max-w-md">
               Your 365-day partnership for gut health with expert surgical gastroenterologist Dr. Yuvaraj T in Mumbai.
             </p>
             <div className="flex gap-4">
               <a
                 href="https://wa.me/"
-                className="w-10 h-10 bg-gray-800 hover:bg-accent-600 rounded-full flex items-center justify-center transition-all duration-300"
+                className="w-10 h-10 bg-primary-800 hover:bg-accent-600 rounded-full flex items-center justify-center transition-all duration-300"
                 aria-label="WhatsApp"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+            <h4 className="text-beige-300 font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
                 <a href="#gut-brain-index" className="hover:text-accent-400 transition-colors">
@@ -55,28 +55,28 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Services</h4>
+            <h4 className="text-beige-300 font-semibold mb-4">Services</h4>
             <ul className="space-y-2">
               <li>
-                <span className="text-gray-400">Virtual Consultations</span>
+                <span className="text-beige-200">Virtual Consultations</span>
               </li>
               <li>
-                <span className="text-gray-400">WhatsApp Support</span>
+                <span className="text-beige-200">WhatsApp Support</span>
               </li>
               <li>
-                <span className="text-gray-400">Private Forum</span>
+                <span className="text-beige-200">Priority In-Clinic Review</span>
               </li>
               <li>
-                <span className="text-gray-400">Mumbai Clinic</span>
+                <span className="text-beige-200">Mumbai Clinic</span>
               </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-gray-800">
+        <div className="pt-8 border-t border-primary-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-beige-200">
               © {currentYear} Priority Circle 365 by CuraGo. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
@@ -94,8 +94,8 @@ export default function Footer() {
         </div>
 
         {/* Medical Disclaimer */}
-        <div className="mt-6 pt-6 border-t border-gray-800">
-          <p className="text-xs text-gray-500 text-center">
+        <div className="mt-6 pt-6 border-t border-primary-800">
+          <p className="text-xs text-beige-200 text-center">
             <strong>Medical Disclaimer:</strong> The information provided on this website is for educational purposes only and is not intended to be a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
           </p>
         </div>
