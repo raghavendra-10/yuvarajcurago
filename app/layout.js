@@ -32,6 +32,11 @@ export const metadata = {
   authors: [{ name: "Dr. Yuvaraj T" }],
   creator: "Dr. Yuvaraj T",
   publisher: "Priority Circle 365",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
   openGraph: {
     title: "Priority Circle 365 - Your Gut-Brain Health Partner",
     description: "Beyond the antacids and 'normal' scans. 365-day expert guidance for your gut health from Surgical Gastroenterologist Dr. Yuvaraj T.",
