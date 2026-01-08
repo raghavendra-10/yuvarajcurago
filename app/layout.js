@@ -33,9 +33,11 @@ export const metadata = {
   creator: "Dr. Yuvaraj T",
   publisher: "Priority Circle 365",
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+    ],
   },
   openGraph: {
     title: "Priority Circle 365 - Your Gut-Brain Health Partner",
