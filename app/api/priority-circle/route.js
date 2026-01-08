@@ -5,7 +5,7 @@ export async function POST(request) {
     const data = await request.json();
 
     // Google Apps Script URL
-    const googleScriptUrl = 'https://script.google.com/macros/s/AKfycbyfRm78TCMp4bKW31ZHD-LKnwjUEeUS88paX_zyvx5QE8rGx-hEym3sXjhyS3fIDXCr/exec';
+    const googleScriptUrl = 'https://script.google.com/macros/s/AKfycbyOFTGhDB4Uf9jujXzgOTXRu4cl82r6OJVb5eFtJ7Il-oF5lCBhjqkz-x8_ghPzmRMn/exec';
 
     // Send to Google Apps Script
     const googleScriptResponse = await fetch(googleScriptUrl, {
