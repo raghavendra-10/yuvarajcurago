@@ -5,10 +5,14 @@ import { useState } from "react";
 export default function ApplicationModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
     phone: "",
-    condition: "",
-    message: ""
+    email: "",
+    age: "",
+    city: "",
+    area: "",
+    hasGutBrainProblem: "",
+    problemDescription: "",
+    preferredOption: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' or 'error'
@@ -21,29 +25,59 @@ export default function ApplicationModal({ isOpen, onClose }) {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch('https://server.wylto.com/webhook/XLuJDKiLWjA5j49Y8S', {
+      // Prepare the data payload
+      const submissionData = {
+        name: formData.name,
+        phoneNumber: formData.phone,
+        email: formData.email,
+        age: formData.age,
+        city: formData.city,
+        area: formData.area,
+        hasGutBrainProblem: formData.hasGutBrainProblem,
+        problemDescription: formData.problemDescription,
+        preferredOption: formData.preferredOption
+      };
+
+      // Send to current webhook
+      const webhookPromise = fetch('https://server.wylto.com/webhook/XLuJDKiLWjA5j49Y8S', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData)
+      });
+
+      // Send to Google Apps Script
+      const googleScriptPromise = fetch('https://script.google.com/macros/s/AKfycbyfRm78TCMp4bKW31ZHD-LKnwjUEeUS88paX_zyvx5QE8rGx-hEym3sXjhyS3fIDXCr/exec', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
-          phoneNumber: formData.phone,
-          email: formData.email,
-          condition: formData.condition,
-          message: formData.message
+          testType: 'priority_circle',
+          ...submissionData
         })
       });
 
-      if (response.ok) {
+      // Wait for both requests to complete
+      const [webhookResponse] = await Promise.all([
+        webhookPromise,
+        googleScriptPromise
+      ]);
+
+      if (webhookResponse.ok) {
         setSubmitStatus('success');
         // Reset form
         setFormData({
           name: "",
-          email: "",
           phone: "",
-          condition: "",
-          message: ""
+          email: "",
+          age: "",
+          city: "",
+          area: "",
+          hasGutBrainProblem: "",
+          problemDescription: "",
+          preferredOption: ""
         });
         // Close modal after 2 seconds
         setTimeout(() => {
@@ -96,90 +130,178 @@ export default function ApplicationModal({ isOpen, onClose }) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Question 1: Are you facing any problem related to the Gut Brain Axis? */}
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-primary-900 mb-2">
-                Full Name *
+              <label className="block text-sm font-semibold text-primary-900 mb-3">
+                Are you facing any problem related to the Gut Brain Axis? *
               </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="hasGutBrainProblem"
+                    value="Yes"
+                    required
+                    checked={formData.hasGutBrainProblem === "Yes"}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-600"
+                  />
+                  <span className="text-primary-900">Yes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="hasGutBrainProblem"
+                    value="No"
+                    required
+                    checked={formData.hasGutBrainProblem === "No"}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-600"
+                  />
+                  <span className="text-primary-900">No</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Question 2: Describe in brief the problem you are facing */}
+            <div>
+              <label htmlFor="problemDescription" className="block text-sm font-semibold text-primary-900 mb-2">
+                Describe in brief the problem you are facing *
+              </label>
+              <textarea
+                id="problemDescription"
+                name="problemDescription"
+                rows="4"
                 required
-                value={formData.name}
+                value={formData.problemDescription}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
-                placeholder="Enter your full name"
+                className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900 resize-none"
+                placeholder="Briefly describe the problem you are facing..."
               />
             </div>
 
+            {/* Question 3: What would be helpful for you? */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-primary-900 mb-2">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
-                placeholder="your.email@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-primary-900 mb-2">
-                WhatsApp Number *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
-                placeholder="+91 98765 43210"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="condition" className="block text-sm font-semibold text-primary-900 mb-2">
-                Primary Concern *
+              <label htmlFor="preferredOption" className="block text-sm font-semibold text-primary-900 mb-2">
+                Given your current situation, what do you think would be helpful for you? *
               </label>
               <select
-                id="condition"
-                name="condition"
+                id="preferredOption"
+                name="preferredOption"
                 required
-                value={formData.condition}
+                value={formData.preferredOption}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
               >
-                <option value="">Select your primary concern</option>
-                <option value="ibs">IBS / Irritable Bowel Syndrome</option>
-                <option value="gerd">GERD / Acid Reflux</option>
-                <option value="bloating">Chronic Bloating</option>
-                <option value="pain">Abdominal Pain</option>
-                <option value="constipation">Constipation</option>
-                <option value="diarrhea">Diarrhea</option>
-                <option value="other">Other Gut Issues</option>
+                <option value="">Select an option</option>
+                <option value="One-time Video/In-clinic consultation">One-time Video/In-clinic consultation</option>
+                <option value="Dr. Yuvaraj's Priority Circle 365">Dr. Yuvaraj's Priority Circle 365</option>
               </select>
             </div>
 
-            <div>
-              <label htmlFor="message" className="block text-sm font-semibold text-primary-900 mb-2">
-                Tell us about your symptoms (Optional)
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows="4"
-                value={formData.message}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900 resize-none"
-                placeholder="Briefly describe your symptoms and how long you've been experiencing them..."
-              />
+            {/* Personal Details */}
+            <div className="pt-4 border-t border-primary-200">
+              <h3 className="text-lg font-semibold text-primary-900 mb-4">Personal Details</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold text-primary-900 mb-2">
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-semibold text-primary-900 mb-2">
+                    WhatsApp Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-primary-900 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="age" className="block text-sm font-semibold text-primary-900 mb-2">
+                    Age *
+                  </label>
+                  <input
+                    type="number"
+                    id="age"
+                    name="age"
+                    required
+                    min="1"
+                    max="120"
+                    value={formData.age}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
+                    placeholder="Enter your age"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="city" className="block text-sm font-semibold text-primary-900 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    required
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
+                    placeholder="Enter your city"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="area" className="block text-sm font-semibold text-primary-900 mb-2">
+                    Area of Residence *
+                  </label>
+                  <input
+                    type="text"
+                    id="area"
+                    name="area"
+                    required
+                    value={formData.area}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-lg border border-primary-200 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition-all bg-white text-primary-900"
+                    placeholder="Enter your area of residence"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="bg-beige-200 p-4 rounded-lg border border-primary-200">

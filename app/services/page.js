@@ -252,7 +252,7 @@ export default function ServicesPage() {
             Schedule a consultation to discuss your condition and treatment options.
           </p>
           <a
-            href="https://wa.me/917021227203"
+            href="https://wa.me/917021227203?text=Hi%2C%20I%20need%20to%20book%20an%20online%20consultation%20with%20Dr.%20Yuvaraj%2C%20please%20guide%20me"
             className="inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold text-xl px-12 py-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
           >
             <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">

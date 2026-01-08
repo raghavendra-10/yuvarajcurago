@@ -158,7 +158,7 @@ export default function DigitalClinicPage() {
                   For cases that require physical examination or pre-surgical workup. Get priority access to the clinic in Mumbai.
                 </p>
                 <a
-                  href="https://wa.me/917021227203"
+                  href="https://wa.me/917021227203?text=Hi%2C%20I%20want%20to%20book%20an%20in-clinic%20consult%20with%20Dr.%20Yuvaraj%2C%20please%20guide%20me"
                   className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold px-5 md:px-8 py-3 md:py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-sm md:text-base w-full md:w-auto"
                 >
                   <svg className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">

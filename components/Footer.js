@@ -15,7 +15,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-4">
               <a
-                href="https://wa.me/917021227203"
+                href="https://wa.me/917021227203?text=Hi%2C%20I%20need%20to%20book%20an%20online%20consultation%20with%20Dr.%20Yuvaraj%2C%20please%20guide%20me"
                 className="w-10 h-10 bg-primary-800 hover:bg-accent-600 rounded-full flex items-center justify-center transition-all duration-300"
                 aria-label="WhatsApp"
               >
