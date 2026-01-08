@@ -47,22 +47,19 @@ export default function ApplicationModal({ isOpen, onClose }) {
         body: JSON.stringify(submissionData)
       });
 
-      // Send to Google Apps Script
-      const googleScriptPromise = fetch('https://script.google.com/macros/s/AKfycbyfRm78TCMp4bKW31ZHD-LKnwjUEeUS88paX_zyvx5QE8rGx-hEym3sXjhyS3fIDXCr/exec', {
+      // Send to Google Sheets via our API route (avoids CORS)
+      const googleSheetsPromise = fetch('/api/priority-circle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          testType: 'priority_circle',
-          ...submissionData
-        })
+        body: JSON.stringify(submissionData)
       });
 
       // Wait for both requests to complete
       const [webhookResponse] = await Promise.all([
         webhookPromise,
-        googleScriptPromise
+        googleSheetsPromise
       ]);
 
       if (webhookResponse.ok) {
