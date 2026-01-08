@@ -86,9 +86,6 @@ export default function ServicesPage() {
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-block bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-2 rounded-full text-sm font-semibold mb-6">
-            Comprehensive Surgical Care
-          </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             Core GI & HPB Services
           </h1>
@@ -101,9 +98,6 @@ export default function ServicesPage() {
       {/* Section 1: Advanced Laparoscopic & GI Surgery */}
       <Section bgColor="bg-white">
         <div className="text-center mb-16">
-          <div className="inline-block bg-primary-100 text-primary-700 px-6 py-2 rounded-full text-sm font-semibold mb-6">
-            Section 1
-          </div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
             Advanced Laparoscopic & GI Surgery
           </h2>
@@ -139,9 +133,6 @@ export default function ServicesPage() {
       {/* Section 2: HPB Center */}
       <Section bgColor="bg-gray-50">
         <div className="text-center mb-16">
-          <div className="inline-block bg-accent-100 text-accent-700 px-6 py-2 rounded-full text-sm font-semibold mb-6">
-            Section 2
-          </div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
             HPB (Hepato-Pancreato-Biliary) Center
           </h2>
@@ -178,48 +169,42 @@ export default function ServicesPage() {
       </Section>
 
       {/* Section 3: GI Oncology */}
-      <Section bgColor="bg-gradient-to-br from-primary-900 to-gray-900">
+      <Section bgColor="bg-white">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-2 rounded-full text-sm font-semibold mb-6 text-white">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            Section 3
-          </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
             GI Oncology (Cancer Care)
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Comprehensive surgical management of GI cancers with a multidisciplinary approach.
           </p>
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20">
+          <div className="bg-gray-50 rounded-3xl p-12 border border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
               <div className="text-center">
-                <div className="w-20 h-20 bg-accent-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl">
+                <div className="w-20 h-20 bg-accent-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Multidisciplinary Approach</h3>
-                <p className="text-gray-300">Collaborative care with oncologists, radiologists, and pathologists</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Multidisciplinary Approach</h3>
+                <p className="text-gray-600">Collaborative care with oncologists, radiologists, and pathologists</p>
               </div>
 
               <div className="text-center">
-                <div className="w-20 h-20 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl">
+                <div className="w-20 h-20 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
                   <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Early Detection Protocols</h3>
-                <p className="text-gray-300">Advanced screening and diagnostic techniques for better outcomes</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Early Detection Protocols</h3>
+                <p className="text-gray-600">Advanced screening and diagnostic techniques for better outcomes</p>
               </div>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-              <h4 className="text-xl font-bold text-white mb-6">Specialized Cancer Surgeries:</h4>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
+              <h4 className="text-xl font-bold text-gray-900 mb-6">Specialized Cancer Surgeries:</h4>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   "Esophageal Cancer",
@@ -229,8 +214,8 @@ export default function ServicesPage() {
                   "Pancreatic Cancer",
                   "Gallbladder Cancer"
                 ].map((cancer, index) => (
-                  <li key={index} className="flex items-center gap-3 text-white">
-                    <svg className="w-5 h-5 text-accent-400" fill="currentColor" viewBox="0 0 20 20">
+                  <li key={index} className="flex items-center gap-3 text-gray-700">
+                    <svg className="w-5 h-5 text-accent-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     {cancer}

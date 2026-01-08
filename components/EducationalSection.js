@@ -4,30 +4,15 @@ export default function EducationalSection() {
   const theories = [
     {
       title: "Visceral Hypersensitivity",
-      description: "Your brain's 'volume control' for gut pain is turned up too high.",
-      icon: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-        </svg>
-      )
+      description: "Your brain's 'volume control' for gut pain is turned up too high."
     },
     {
       title: "The Vagus Highway",
-      description: "Your brain and gut send 100,000 signals a minute. When this communication is 'noisy,' digestion fails.",
-      icon: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      )
+      description: "Your brain and gut send 100,000 signals a minute. When this communication is 'noisy,' digestion fails."
     },
     {
       title: "The Enteric Nervous System",
-      description: "Your gut has its own brain. We don't just treat the stomach and intestines; we recalibrate the connection.",
-      icon: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-      )
+      description: "Your gut has its own brain. We don't just treat the stomach and intestines; we recalibrate the connection."
     }
   ];
 
@@ -48,18 +33,18 @@ export default function EducationalSection() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto bg-primary-800 p-8 md:p-12 rounded-2xl shadow-xl border border-primary-700">
+      <div className="max-w-4xl mx-auto bg-beige-100 p-8 md:p-12 rounded-2xl shadow-xl border border-beige-300">
         <div className="space-y-6">
           {theories.map((theory, index) => (
             <div key={index} className="flex items-start gap-6">
-              <div className="flex-shrink-0 w-12 h-12 bg-accent-500/20 rounded-lg flex items-center justify-center text-accent-400">
-                {theory.icon}
+              <div className="flex-shrink-0 w-6 h-6 mt-1">
+                <img src="/favicon.ico" alt="" className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-white mb-2">
+                <h3 className="text-lg font-bold text-primary-900 mb-2">
                   {theory.title}
                 </h3>
-                <p className="text-beige-200 text-sm leading-relaxed">
+                <p className="text-primary-800 text-sm leading-relaxed">
                   {theory.description}
                 </p>
               </div>

@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="bg-primary-900 text-beige-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-2xl font-bold text-beige-300 mb-4">
@@ -52,44 +52,14 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          {/* Services */}
-          <div>
-            <h4 className="text-beige-300 font-semibold mb-4">Services</h4>
-            <ul className="space-y-2">
-              <li>
-                <span className="text-beige-200">Virtual Consultations</span>
-              </li>
-              <li>
-                <span className="text-beige-200">WhatsApp Support</span>
-              </li>
-              <li>
-                <span className="text-beige-200">Priority In-Clinic Review</span>
-              </li>
-              <li>
-                <span className="text-beige-200">Mumbai Clinic</span>
-              </li>
-            </ul>
-          </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-primary-800">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4">
             <p className="text-sm text-beige-200">
               © {currentYear} Priority Circle 365 by CuraGo. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="hover:text-accent-400 transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="hover:text-accent-400 transition-colors">
-                Terms of Service
-              </a>
-              <a href="#" className="hover:text-accent-400 transition-colors">
-                Contact
-              </a>
-            </div>
           </div>
         </div>
 

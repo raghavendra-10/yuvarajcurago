@@ -25,7 +25,7 @@ export async function POST(request) {
     });
 
     // Send to Google Apps Script
-    const googleScriptUrl = 'https://script.google.com/macros/s/AKfycbyOFTGhDB4Uf9jujXzgOTXRu4cl82r6OJVb5eFtJ7Il-oF5lCBhjqkz-x8_ghPzmRMn/exec';
+    const googleScriptUrl = 'https://script.google.com/macros/s/AKfycbw4We2ZjXEY1raav_VXx-4PP3RoPTmdABvjocDYUs4gY6ZjfqlKY-RpF3rNZw5QqKOx/exec';
     const googleScriptPromise = fetch(googleScriptUrl, {
       method: 'POST',
       headers: {

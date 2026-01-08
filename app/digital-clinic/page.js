@@ -12,7 +12,7 @@ export default function DigitalClinicPage() {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-accent-600 to-accent-800 text-white py-24 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[#25D366] to-[#20BA5A] text-white py-24 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
@@ -24,7 +24,7 @@ export default function DigitalClinicPage() {
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
             Digital Clinic
           </h1>
-          <p className="text-lg md:text-xl lg:text-2xl text-accent-100 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
             Experience convenient, expert care from anywhere. Your health, your schedule.
           </p>
         </div>
@@ -279,7 +279,7 @@ export default function DigitalClinicPage() {
           </div>
 
           {/* CTA */}
-          <div className="bg-gradient-to-br from-primary-600 to-accent-600 rounded-3xl p-12 text-center text-white shadow-2xl">
+          <div className="bg-gradient-to-br from-[#25D366] to-[#20BA5A] rounded-3xl p-12 text-center text-white shadow-2xl">
             <h3 className="text-3xl md:text-4xl font-bold mb-6">
               Ready for Year-Round Expert Support?
             </h3>
@@ -288,7 +288,7 @@ export default function DigitalClinicPage() {
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center gap-3 bg-white text-primary-700 font-bold text-xl px-12 py-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
+              className="inline-flex items-center gap-3 bg-white text-gray-900 font-bold text-xl px-12 py-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-2xl hover:bg-gray-50"
             >
               <span>Apply Now</span>
             </button>
