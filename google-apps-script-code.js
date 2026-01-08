@@ -17,6 +17,7 @@ const CONFIG = {
   CALA_SHEET_NAME: 'CALA Results',
   GBSI_SHEET_NAME: 'GBSI Results',
   PRIORITY_CIRCLE_SHEET_NAME: 'Priority Circle 365',
+  CONSULTATION_BOOKING_SHEET_NAME: 'Consultation Bookings',
   EMAIL_SUBJECT_AURA: 'Your AURA Index Results from CuraGo',
   EMAIL_SUBJECT_ATM: 'Your ATM Assessment Results from CuraGo',
   EMAIL_SUBJECT_CALA: 'Your CALA 1.0 Assessment Results from CuraGo',
@@ -75,6 +76,8 @@ function doPost(e) {
       response = handleGbsiSubmission(data);
     } else if (data.testType === 'priority_circle') {
       response = handlePriorityCircleSubmission(data);
+    } else if (data.testType === 'consultation_booking') {
+      response = handleConsultationBookingSubmission(data);
     } else {
       throw new Error('Invalid test type: ' + data.testType);
     }
@@ -1672,6 +1675,42 @@ function handlePriorityCircleSubmission(data) {
   return {
     success: true,
     message: 'Priority Circle 365 application submitted successfully',
+    timestamp: timestamp.toISOString()
+  };
+}
+
+// ============================================================
+// CONSULTATION BOOKING SUBMISSION HANDLER
+// ============================================================
+function handleConsultationBookingSubmission(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG.CONSULTATION_BOOKING_SHEET_NAME);
+
+  if (!sheet) {
+    throw new Error('Sheet "' + CONFIG.CONSULTATION_BOOKING_SHEET_NAME + '" not found. Please create it.');
+  }
+
+  // Prepare row data to match the columns:
+  // Timestamp, Name, WhatsApp Number, Email, Consultation Type, Preferred Date, Preferred Time, Status, Notes
+  const timestamp = new Date();
+  const rowData = [
+    timestamp,
+    data.name || '',
+    data.phoneNumber || '',
+    data.email || '',
+    data.consultationType || '',
+    data.preferredDate || '',
+    data.preferredTime || '',
+    'Pending Confirmation', // Status
+    '' // Notes (empty for now)
+  ];
+
+  sheet.appendRow(rowData);
+  Logger.log('Consultation booking saved to sheet');
+
+  return {
+    success: true,
+    message: 'Consultation booking submitted successfully',
     timestamp: timestamp.toISOString()
   };
 }
