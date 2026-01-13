@@ -18,6 +18,13 @@ export default function AdminDashboard() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [addingSlot, setAddingSlot] = useState(null);
 
+  // Date Blocking Flow
+  const [showBlockDates, setShowBlockDates] = useState(false);
+  const [blockDate, setBlockDate] = useState("");
+  const [blockReason, setBlockReason] = useState("");
+  const [blockedDates, setBlockedDates] = useState([]);
+  const [loadingBlockedDates, setLoadingBlockedDates] = useState(false);
+
   useEffect(() => {
     // Check if user is authenticated
     const token = localStorage.getItem("adminToken");
@@ -69,6 +76,15 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         showMessage("Slot status updated successfully");
+
+        // Update slots list in real-time
+        setSlots((prevSlots) =>
+          prevSlots.map((slot) =>
+            slot.time === time ? { ...slot, active: !currentStatus } : slot
+          )
+        );
+
+        // Refresh data in background
         fetchBookings();
       }
     } catch (error) {
@@ -89,6 +105,18 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         showMessage("Slot removed successfully");
+
+        // Update slots list in real-time
+        setSlots((prevSlots) => prevSlots.filter((slot) => slot.time !== time));
+
+        // Update available slots list if visible
+        setAvailableSlots((prevSlots) =>
+          prevSlots.map((slot) =>
+            slot.time === time ? { ...slot, exists: false } : slot
+          )
+        );
+
+        // Refresh data in background
         fetchBookings();
       }
     } catch (error) {
@@ -138,19 +166,135 @@ export default function AdminDashboard() {
       });
 
       const data = await response.json();
-      if (data.success) {
+
+      if (response.ok && data.success) {
         showMessage(`Slot ${time} added successfully`);
-        // Refresh available slots
-        fetchAvailableSlots();
+
+        // Update available slots list in real-time
+        setAvailableSlots((prevSlots) =>
+          prevSlots.map((slot) =>
+            slot.time === time ? { ...slot, exists: true } : slot
+          )
+        );
+
+        // Update main slots list in real-time
+        if (data.slot) {
+          setSlots((prevSlots) => [...prevSlots, data.slot].sort((a, b) => a.time.localeCompare(b.time)));
+        }
+
+        // Refresh data in background
         fetchBookings();
       } else {
-        showMessage(data.message || "Failed to add slot", "error");
+        showMessage(data.error || data.message || "Failed to add slot", "error");
       }
     } catch (error) {
       console.error("Error adding slot:", error);
       showMessage("Failed to add slot", "error");
     } finally {
       setAddingSlot(null);
+    }
+  };
+
+  const fetchBlockedDates = async () => {
+    setLoadingBlockedDates(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/admin/date-overrides", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setBlockedDates(data.overrides.filter(o => o.type === 'blocked'));
+      }
+    } catch (error) {
+      console.error("Error fetching blocked dates:", error);
+    } finally {
+      setLoadingBlockedDates(false);
+    }
+  };
+
+  const handleBlockDate = async () => {
+    if (!blockDate) {
+      showMessage("Please select a date", "error");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/admin/date-overrides", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "block",
+          date: blockDate,
+          reason: blockReason || "Blocked by admin",
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        showMessage(`Date ${blockDate} blocked successfully`);
+
+        // Update blocked dates list in real-time
+        setBlockedDates((prev) => [
+          ...prev,
+          {
+            date: blockDate,
+            type: "blocked",
+            reason: blockReason || "Blocked by admin",
+          },
+        ]);
+
+        // Reset form
+        setBlockDate("");
+        setBlockReason("");
+
+        // Refresh in background
+        fetchBlockedDates();
+      } else {
+        showMessage(data.error || "Failed to block date", "error");
+      }
+    } catch (error) {
+      console.error("Error blocking date:", error);
+      showMessage("Failed to block date", "error");
+    }
+  };
+
+  const handleUnblockDate = async (date) => {
+    if (!confirm(`Are you sure you want to unblock ${date}?`)) return;
+
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/admin/date-overrides", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "unblock",
+          date,
+        }),
+      });
+
+      if (response.ok) {
+        showMessage(`Date ${date} unblocked successfully`);
+
+        // Update blocked dates list in real-time
+        setBlockedDates((prev) => prev.filter((b) => b.date !== date));
+
+        // Refresh in background
+        fetchBlockedDates();
+      } else {
+        showMessage("Failed to unblock date", "error");
+      }
+    } catch (error) {
+      console.error("Error unblocking date:", error);
+      showMessage("Failed to unblock date", "error");
     }
   };
 
@@ -353,6 +497,107 @@ export default function AdminDashboard() {
               {!showAddSlots && (
                 <div className="text-center py-8 text-primary-600">
                   <p className="text-sm">Click "+ Add Slots" to add new time slots for specific dates</p>
+                </div>
+              )}
+            </div>
+
+            {/* Block Dates Section */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-primary-700">
+                  Block Dates
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowBlockDates(!showBlockDates);
+                    if (!showBlockDates) {
+                      fetchBlockedDates();
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                  {showBlockDates ? "Close" : "Manage Blocked Dates"}
+                </button>
+              </div>
+
+              {showBlockDates && (
+                <div className="space-y-6">
+                  {/* Block Date Form */}
+                  <div className="p-4 bg-beige-50 rounded-lg border-2 border-primary-200">
+                    <h3 className="font-semibold text-primary-700 mb-3">
+                      Block a New Date
+                    </h3>
+                    <div className="space-y-3">
+                      <input
+                        type="date"
+                        value={blockDate}
+                        onChange={(e) => setBlockDate(e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                      />
+                      <input
+                        type="text"
+                        value={blockReason}
+                        onChange={(e) => setBlockReason(e.target.value)}
+                        placeholder="Reason (optional)"
+                        className="w-full px-4 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                      />
+                      <button
+                        onClick={handleBlockDate}
+                        className="w-full px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+                      >
+                        Block This Date
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Blocked Dates List */}
+                  {loadingBlockedDates ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto"></div>
+                      <p className="mt-4 text-primary-700 font-semibold">Loading blocked dates...</p>
+                    </div>
+                  ) : blockedDates.length > 0 ? (
+                    <div className="p-4 bg-beige-50 rounded-lg border-2 border-primary-200">
+                      <h3 className="font-semibold text-primary-700 mb-3">
+                        Currently Blocked Dates
+                      </h3>
+                      <div className="space-y-2">
+                        {blockedDates.map((blocked) => (
+                          <div
+                            key={blocked.date}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-red-200"
+                          >
+                            <div>
+                              <div className="font-semibold text-primary-900">
+                                {blocked.date}
+                              </div>
+                              {blocked.reason && (
+                                <div className="text-sm text-gray-600">
+                                  {blocked.reason}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleUnblockDate(blocked.date)}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm"
+                            >
+                              Unblock
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-primary-600">
+                      <p className="text-sm">No blocked dates</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!showBlockDates && (
+                <div className="text-center py-8 text-primary-600">
+                  <p className="text-sm">Click "Manage Blocked Dates" to block specific dates from booking</p>
                 </div>
               )}
             </div>

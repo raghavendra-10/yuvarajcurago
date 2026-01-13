@@ -60,7 +60,11 @@ export async function POST(request) {
     const label = formatTimeLabel(time);
 
     const result = await addSlot(time, label);
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+      message: "Slot added successfully",
+      slot: result,
+    });
   } catch (error) {
     console.error("Error adding slot:", error);
     return NextResponse.json(
@@ -119,7 +123,10 @@ export async function DELETE(request) {
     }
 
     const result = await removeSlot(time);
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+      message: "Slot removed successfully",
+    });
   } catch (error) {
     console.error("Error removing slot:", error);
     return NextResponse.json(

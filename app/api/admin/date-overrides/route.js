@@ -51,11 +51,18 @@ export async function POST(request) {
     switch (action) {
       case "block":
         result = await blockDate(date, reason);
-        break;
+        return NextResponse.json({
+          success: true,
+          message: "Date blocked successfully",
+          override: result,
+        });
 
       case "unblock":
         result = await unblockDate(date);
-        break;
+        return NextResponse.json({
+          success: true,
+          message: result ? "Date unblocked successfully" : "Date was not blocked",
+        });
 
       case "setSlots":
         if (!slotOverrides) {
@@ -65,12 +72,19 @@ export async function POST(request) {
           );
         }
         result = await setDateSlotOverrides(date, slotOverrides);
-        break;
+        return NextResponse.json({
+          success: true,
+          message: "Date slot overrides set successfully",
+          override: result,
+        });
 
       case "clearSlots":
         // Clear custom slots by deleting the date override
         result = await clearDateOverride(date);
-        break;
+        return NextResponse.json({
+          success: true,
+          message: "Date slot overrides cleared successfully",
+        });
 
       default:
         return NextResponse.json(
@@ -78,8 +92,6 @@ export async function POST(request) {
           { status: 400 }
         );
     }
-
-    return NextResponse.json(result);
   } catch (error) {
     console.error("Error managing date overrides:", error);
     return NextResponse.json(
