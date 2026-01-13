@@ -25,6 +25,11 @@ export default function AdminDashboard() {
   const [blockedDates, setBlockedDates] = useState([]);
   const [loadingBlockedDates, setLoadingBlockedDates] = useState(false);
 
+  // Date-specific Slot Viewer
+  const [viewDate, setViewDate] = useState("");
+  const [dateSlotsInfo, setDateSlotsInfo] = useState(null);
+  const [loadingDateSlots, setLoadingDateSlots] = useState(false);
+
   useEffect(() => {
     // Check if user is authenticated
     const token = localStorage.getItem("adminToken");
@@ -298,6 +303,96 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchDateSlots = async (date) => {
+    if (!date) {
+      showMessage("Please select a date", "error");
+      return;
+    }
+
+    setLoadingDateSlots(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+
+      // Fetch available slots for this date
+      const slotsResponse = await fetch(`/api/available-slots?date=${date}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const slotsData = await slotsResponse.json();
+
+      if (slotsData.success) {
+        // Organize slot information
+        const slotInfo = {
+          date,
+          slots: slotsData.slots.map((slot) => ({
+            time: slot.time,
+            label: slot.label,
+            active: slot.active,
+            available: slot.available,
+            booked: !slot.available,
+          })),
+        };
+
+        setDateSlotsInfo(slotInfo);
+      } else {
+        showMessage("Failed to fetch date slots", "error");
+      }
+    } catch (error) {
+      console.error("Error fetching date slots:", error);
+      showMessage("Failed to fetch date slots", "error");
+    } finally {
+      setLoadingDateSlots(false);
+    }
+  };
+
+  const toggleDateSlot = async (date, time, currentlyActive) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+
+      // Get all slots for this date
+      const currentSlots = dateSlotsInfo.slots.reduce((acc, slot) => {
+        // If this is the slot we're toggling, use the new status
+        if (slot.time === time) {
+          acc[slot.time] = !currentlyActive;
+        } else if (slot.active) {
+          // Keep other active slots as is
+          acc[slot.time] = true;
+        }
+        return acc;
+      }, {});
+
+      const response = await fetch("/api/admin/date-overrides", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "setSlots",
+          date,
+          slotOverrides: currentSlots,
+        }),
+      });
+
+      if (response.ok) {
+        showMessage(`Slot ${time} ${!currentlyActive ? "enabled" : "disabled"} for ${date}`);
+
+        // Update in real-time
+        setDateSlotsInfo((prev) => ({
+          ...prev,
+          slots: prev.slots.map((slot) =>
+            slot.time === time ? { ...slot, active: !currentlyActive } : slot
+          ),
+        }));
+      } else {
+        showMessage("Failed to update slot", "error");
+      }
+    } catch (error) {
+      console.error("Error toggling date slot:", error);
+      showMessage("Failed to update slot", "error");
+    }
+  };
+
   const showMessage = (text, type = "success") => {
     setMessage({ text, type });
     setTimeout(() => setMessage(""), 3000);
@@ -358,11 +453,116 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Manage Slots Section */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Existing Slots */}
+            {/* View Slots by Date */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-primary-700 mb-6">
-                Active Slots
+                View Slots by Date
               </h2>
+
+              <div className="space-y-4">
+                {/* Date Picker */}
+                <div className="flex gap-3">
+                  <input
+                    type="date"
+                    value={viewDate}
+                    onChange={(e) => setViewDate(e.target.value)}
+                    className="flex-1 px-4 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                  />
+                  <button
+                    onClick={() => fetchDateSlots(viewDate)}
+                    disabled={!viewDate || loadingDateSlots}
+                    className="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                  >
+                    {loadingDateSlots ? "Loading..." : "View Slots"}
+                  </button>
+                </div>
+
+                {/* Date Slots Display */}
+                {loadingDateSlots ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto"></div>
+                    <p className="mt-4 text-primary-700 font-semibold">Loading slots...</p>
+                  </div>
+                ) : dateSlotsInfo ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-beige-50 rounded-lg border-2 border-primary-200">
+                      <div>
+                        <h3 className="font-bold text-primary-900">
+                          {dateSlotsInfo.date}
+                        </h3>
+                        <p className="text-sm text-primary-600">
+                          {dateSlotsInfo.slots.filter((s) => s.booked).length} booked • {dateSlotsInfo.slots.filter((s) => s.available && s.active).length} available
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setDateSlotsInfo(null);
+                          setViewDate("");
+                        }}
+                        className="text-sm text-primary-600 hover:text-primary-800 font-semibold"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {dateSlotsInfo.slots.map((slot) => (
+                        <div
+                          key={slot.time}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            slot.booked
+                              ? "bg-red-50 border-red-300"
+                              : slot.active
+                              ? "bg-green-50 border-green-400"
+                              : "bg-gray-100 border-gray-300 opacity-60"
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-primary-900 mb-1">
+                              {slot.label}
+                            </span>
+                            <div className="text-xs mb-2">
+                              {slot.booked ? (
+                                <span className="text-red-700 font-semibold">● BOOKED</span>
+                              ) : slot.active ? (
+                                <span className="text-green-700 font-semibold">● Available</span>
+                              ) : (
+                                <span className="text-gray-600">● Disabled</span>
+                              )}
+                            </div>
+                            {!slot.booked && (
+                              <button
+                                onClick={() => toggleDateSlot(dateSlotsInfo.date, slot.time, slot.active)}
+                                className={`w-full px-2 py-1 text-xs rounded font-semibold transition-colors ${
+                                  slot.active
+                                    ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                                    : "bg-green-500 hover:bg-green-600 text-white"
+                                }`}
+                              >
+                                {slot.active ? "Disable" : "Enable"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-primary-600">
+                    <p className="text-sm">Select a date above to view its slots</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Global Slots Management */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-primary-700 mb-6">
+                Global Default Slots
+              </h2>
+              <p className="text-sm text-primary-600 mb-4">
+                These are the default time slots available every day (unless overridden for specific dates)
+              </p>
 
               {slots.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
