@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
-import { getEffectiveSlotsForDate, isSlotBooked } from "@/lib/slotManager";
+import {
+  getEffectiveSlotsForDate,
+  isSlotBooked,
+  releaseExpiredReservations,
+} from "@/lib/slotManager";
 import { format, addDays, startOfDay } from "date-fns";
 
 // GET - Get available slots for users
 export async function GET(request) {
   try {
+    // Auto-cleanup expired reservations
+    releaseExpiredReservations();
+
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
     const mode = searchParams.get("mode") || "online";

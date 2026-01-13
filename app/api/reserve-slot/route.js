@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
-import { createReservation, isSlotBooked } from "@/lib/slotManager";
+import {
+  createReservation,
+  isSlotBooked,
+  releaseExpiredReservations,
+} from "@/lib/slotManager";
 
 export async function POST(request) {
   try {
+    // Auto-cleanup expired reservations before checking availability
+    releaseExpiredReservations();
+
     const { name, whatsapp, email, modeOfContact, date, time } =
       await request.json();
 
