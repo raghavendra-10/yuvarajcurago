@@ -218,101 +218,24 @@ export default function BookConsultation() {
           />
         </div>
 
-        {/* Clinic Information */}
-        <div className="container mx-auto px-6 py-8 md:py-12">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* Location */}
+        {/* Find Us in Mumbai - Simple Text */}
+        <div className="container mx-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto">
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-primary-600 mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-primary-600 mb-4">
                 Find Us in Mumbai
               </h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Side - Text Content */}
-                <div className="space-y-4">
-                  <p className="text-lg text-primary-800 flex items-start gap-2">
-                    <span className="text-xl">📍</span>
-                    <span>SRV Hospital, Tilak Nagar, Chembur.</span>
-                  </p>
-                  <a
-                    href="https://maps.google.com/?q=SRV+Hospital+Tilak+Nagar+Chembur"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block text-primary-600 hover:text-primary-700 font-semibold underline"
-                  >
-                    View on Google Maps
-                  </a>
-                  <p className="text-primary-700">
-                    <span className="font-semibold">Timings:</span> Evenings, Monday to Saturday, Check slot availability below
-                  </p>
-                </div>
-
-                {/* Right Side - Google Maps Embed */}
-                <div className="rounded-xl overflow-hidden shadow-md h-64 lg:h-full">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.5447777777777!2d72.89999999999999!3d19.0599999999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDAzJzM2LjAiTiA3MsKwNTQnMDAuMCJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin&q=SRV+Hospital+Tilak+Nagar+Chembur"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="SRV Hospital Location"
-                  ></iframe>
-                </div>
-              </div>
-            </div>
-
-            {/* Professional Consultation Fees */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-primary-600 mb-6">
-                Professional Consultation Fees
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-primary-50">
-                      <th className="text-left py-3 px-4 font-semibold text-primary-900 border-b-2 border-primary-200">
-                        Service Type
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold text-primary-900 border-b-2 border-primary-200">
-                        New Consultation
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold text-primary-900 border-b-2 border-primary-200">
-                        Follow-up Visit
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-primary-100 hover:bg-beige-50">
-                      <td className="py-4 px-4 text-primary-800 font-medium">
-                        In-Clinic (Offline)
-                      </td>
-                      <td className="py-4 px-4 text-primary-800">₹1,000</td>
-                      <td className="py-4 px-4 text-primary-800">₹800</td>
-                    </tr>
-                    <tr className="hover:bg-beige-50">
-                      <td className="py-4 px-4 text-primary-800 font-medium">
-                        Video (Online)
-                      </td>
-                      <td className="py-4 px-4 text-primary-800">₹1,000</td>
-                      <td className="py-4 px-4 text-primary-800">₹800</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* The CuraGo Advantage */}
-            <div className="bg-gradient-to-br from-primary-50 to-accent-50 rounded-2xl shadow-lg p-6 md:p-8 border-2 border-primary-100">
-              <h2 className="text-2xl md:text-3xl font-bold text-primary-600 mb-4">
-                The CuraGo Advantage
-              </h2>
-              <h3 className="text-xl font-semibold text-primary-800 mb-3">
-                Book Your Slot for a Hassle-Free Experience
-              </h3>
-              <p className="text-lg text-primary-700 leading-relaxed">
-                Skip the crowded hospital lounge. By booking through CuraGo, you secure a dedicated time slot, ensuring zero waiting time and a direct, focused session with Dr. Yuvaraj.
+              <p className="text-lg text-primary-800 mb-2">
+                📍 SRV Hospital, Tilak Nagar, Chembur.
               </p>
+              <a
+                href="https://maps.google.com/?q=SRV+Hospital+Tilak+Nagar+Chembur"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-primary-600 hover:text-primary-700 font-semibold underline"
+              >
+                View Location
+              </a>
             </div>
           </div>
         </div>
@@ -321,14 +244,18 @@ export default function BookConsultation() {
       {/* Booking Form Section */}
       <section className="container mx-auto px-6 py-16 md:py-24">
         <div className="max-w-4xl mx-auto">
+          {/* Book Your Slot Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
+              Book Your Slot
+            </h2>
+            <p className="text-xl text-primary-700 font-semibold">
+              Secure your consultation slot & mode of consultation at ₹150/-
+            </p>
+          </div>
+
           {/* Form Card */}
           <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 animate-slide-up">
-            <h2 className="text-3xl md:text-4xl font-bold text-primary-600 mb-4 text-center">
-              Secure Your Consultation Slot
-            </h2>
-            <p className="text-primary-800 text-center mb-8 text-lg">
-              Please choose your preferred mode of consultation below:
-            </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Full Name Field */}
@@ -346,7 +273,7 @@ export default function BookConsultation() {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
+                  className="w-full px-3 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
                   placeholder="Enter your full name"
                 />
               </div>
@@ -370,7 +297,7 @@ export default function BookConsultation() {
                     max="120"
                     value={formData.age}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
+                    className="w-full px-3 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
                     placeholder="Your age"
                   />
                 </div>
@@ -383,7 +310,7 @@ export default function BookConsultation() {
                   <button
                     type="button"
                     onClick={() => setShowGenderDropdown(!showGenderDropdown)}
-                    className="w-full px-4 py-3 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all bg-white text-left flex items-center justify-between"
+                    className="w-full px-3 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all bg-white text-left flex items-center justify-between"
                   >
                     <span className={formData.gender ? "text-primary-900" : "text-gray-400"}>
                       {formData.gender || "Select Gender"}
@@ -407,7 +334,7 @@ export default function BookConsultation() {
                             setFormData((prev) => ({ ...prev, gender: option }));
                             setShowGenderDropdown(false);
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-primary-50 transition-colors ${
+                          className={`w-full px-3 py-2 text-left hover:bg-primary-50 transition-colors ${
                             formData.gender === option ? "bg-primary-100 text-primary-900 font-semibold" : "text-primary-700"
                           }`}
                         >
@@ -434,7 +361,7 @@ export default function BookConsultation() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
+                  className="w-full px-3 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
                   placeholder="your.email@example.com"
                 />
               </div>
@@ -448,7 +375,7 @@ export default function BookConsultation() {
                   WhatsApp Number *
                 </label>
                 <div className="flex gap-2">
-                  <div className="flex items-center px-4 py-3 bg-gray-100 border-2 border-primary-200 rounded-lg text-primary-700 font-semibold">
+                  <div className="flex items-center px-3 py-2 bg-gray-100 border-2 border-primary-200 rounded-lg text-primary-700 font-semibold text-sm">
                     +91
                   </div>
                   <input
@@ -458,7 +385,7 @@ export default function BookConsultation() {
                     required
                     value={formData.whatsapp}
                     onChange={handleChange}
-                    className="flex-1 px-4 py-3 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
+                    className="flex-1 min-w-0 px-3 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 transition-all"
                     placeholder="XXXXX XXXXX"
                     pattern="[0-9]{10}"
                     maxLength="10"
@@ -471,7 +398,7 @@ export default function BookConsultation() {
                 <label className="block text-sm font-semibold text-primary-900 mb-2">
                   Mode of Consultation *
                 </label>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -724,6 +651,146 @@ export default function BookConsultation() {
                 Contact us on WhatsApp
               </a>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CuraGo Advantage Section */}
+      <section className="container mx-auto px-6 py-16 md:py-24 bg-gradient-to-br from-beige-50 to-white">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-primary-600 mb-8 text-center">
+            The CuraGo Advantage
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-primary-900 mb-2">Expert Surgical Gastroenterologist</h3>
+                  <p className="text-primary-700">Specialized expertise in gut health and digestive disorders with years of clinical experience.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-primary-900 mb-2">365-Day Partnership</h3>
+                  <p className="text-primary-700">Ongoing support for your gut health journey, not just one-time consultations.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-primary-900 mb-2">Gut-Brain Sensitivity Index</h3>
+                  <p className="text-primary-700">Understand the connection between your gut and brain with specialized assessment.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-primary-100">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-primary-900 mb-2">Beyond 'Normal' Reports</h3>
+                  <p className="text-primary-700">Stop settling for 'everything is normal' when you know something is wrong.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Professional Consultation Fees Section */}
+      <section className="container mx-auto px-6 py-16 md:py-24">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border-2 border-primary-200">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary-600 mb-6 text-center">
+              Professional Consultation Fees
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-beige-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-lg font-semibold text-primary-900">Online Video Consultation</span>
+                </div>
+                <span className="text-2xl font-bold text-primary-600">₹1500</span>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-beige-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="text-lg font-semibold text-primary-900">In-Clinic Consultation</span>
+                </div>
+                <span className="text-2xl font-bold text-primary-600">₹1500</span>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-primary-50 rounded-lg border-2 border-primary-200">
+              <p className="text-sm text-primary-800 text-center">
+                <strong>Note:</strong> The ₹150/- booking fee will be fully adjusted against the consultation fee. You only pay the remaining ₹1350/- at the time of consultation.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Google Maps Location Section */}
+      <section className="container mx-auto px-6 py-16 md:py-24 bg-beige-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary-600 mb-4">
+              Visit Our Clinic
+            </h2>
+            <p className="text-lg text-primary-700 mb-4">
+              📍 SRV Hospital, Tilak Nagar, Chembur, Mumbai
+            </p>
+            <a
+              href="https://maps.google.com/?q=SRV+Hospital+Tilak+Nagar+Chembur"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              View on Google Maps
+            </a>
+          </div>
+
+          {/* Map Image */}
+          <div className="rounded-2xl overflow-hidden shadow-2xl">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.234567890123!2d72.8947!3d19.0596!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDAzJzM0LjYiTiA3MsKwNTMnNDAuOSJF!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin"
+              width="100%"
+              height="450"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="w-full"
+            ></iframe>
           </div>
         </div>
       </section>
