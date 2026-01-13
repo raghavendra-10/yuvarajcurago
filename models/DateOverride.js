@@ -22,7 +22,6 @@ const DateOverrideSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for faster date lookups
-DateOverrideSchema.index({ date: 1 });
+// Note: date field has unique:true which automatically creates an index
 
 export default mongoose.models.DateOverride || mongoose.model('DateOverride', DateOverrideSchema);
