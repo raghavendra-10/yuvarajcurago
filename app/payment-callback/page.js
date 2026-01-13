@@ -1,104 +1,99 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function PaymentCallback() {
+function PaymentStatusHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const hasVerifiedRef = useRef(false);
+
   const [status, setStatus] = useState("processing");
   const [message, setMessage] = useState("Verifying your payment...");
 
   useEffect(() => {
+    if (hasVerifiedRef.current) return;
+    hasVerifiedRef.current = true;
+
     const verifyPayment = async () => {
       try {
-        // Get payment details from URL parameters
-        // Razorpay Payment Button sends different parameters
-        const payment_id =
+        const paymentId =
           searchParams.get("razorpay_payment_id") ||
           searchParams.get("payment_id");
 
-        const payment_status = searchParams.get("payment_status");
+        if (!paymentId) {
+          setStatus("error");
+          setMessage("Payment ID missing. Please try again.");
+          return;
+        }
 
-        // Get reservation ID from sessionStorage
         const reservationId = sessionStorage.getItem("reservationId");
         const bookingData = sessionStorage.getItem("pendingBooking");
 
-        console.log("Payment callback data:", {
-          payment_id,
-          payment_status,
-          reservationId,
-          allParams: Object.fromEntries(searchParams.entries())
-        });
-
-        if (!payment_id) {
+        if (!reservationId || !bookingData) {
           setStatus("error");
-          setMessage("Payment information missing. Please try again.");
+          setMessage(
+            "Booking information not found. Please contact support."
+          );
           return;
         }
 
-        if (!reservationId) {
+        let booking;
+        try {
+          booking = JSON.parse(bookingData);
+        } catch {
           setStatus("error");
-          setMessage("Booking information not found. Please contact support.");
+          setMessage("Corrupted booking data. Please contact support.");
           return;
         }
 
-        // Check if payment was successful
-        if (payment_status && payment_status !== "success") {
-          setStatus("error");
-          setMessage("Payment was not successful. Please try again.");
-          return;
-        }
-
-        // Verify payment with backend
         const response = await fetch("/api/verify-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            razorpay_payment_id: payment_id,
-            razorpay_signature: "payment_button", // Payment button doesn't use signature
+            razorpay_payment_id: paymentId,
             reservationId,
           }),
         });
 
         const data = await response.json();
 
-        if (response.ok && data.success) {
-          // Parse booking data
-          const booking = JSON.parse(bookingData);
-
-          // Store booking info for confirmation page
-          sessionStorage.setItem(
-            "bookingInfo",
-            JSON.stringify({
-              name: booking.name,
-              date: booking.date,
-              time: booking.time,
-              mode: booking.mode,
-              meetLink: data.booking.meetLink,
-              paymentId: data.booking.paymentId,
-            })
-          );
-
-          // Clear temporary data
-          sessionStorage.removeItem("reservationId");
-          sessionStorage.removeItem("pendingBooking");
-
-          setStatus("success");
-          setMessage("Payment verified successfully! Redirecting...");
-
-          // Redirect to confirmation page
-          setTimeout(() => {
-            router.push("/schedule-confirmation");
-          }, 2000);
-        } else {
+        if (!response.ok || !data?.success) {
           setStatus("error");
-          setMessage(data.error || "Payment verification failed. Please contact support.");
+          setMessage(
+            data?.error || "Payment verification failed. Please contact support."
+          );
+          return;
         }
-      } catch (error) {
-        console.error("Error verifying payment:", error);
+
+        sessionStorage.setItem(
+          "bookingInfo",
+          JSON.stringify({
+            name: booking.name,
+            date: booking.date,
+            time: booking.time,
+            mode: booking.mode,
+            meetLink: data.booking?.meetLink,
+            paymentId: data.booking?.paymentId,
+          })
+        );
+
+        sessionStorage.removeItem("reservationId");
+        sessionStorage.removeItem("pendingBooking");
+
+        setStatus("success");
+        setMessage("Payment verified successfully! Redirecting...");
+
+        setTimeout(() => {
+          router.replace("/schedule-confirmation");
+        }, 1500);
+      } catch (err) {
+        console.error("Payment verification error:", err);
         setStatus("error");
-        setMessage("An error occurred while verifying payment. Please contact support.");
+        setMessage(
+          "Something went wrong while verifying payment. Please contact support."
+        );
       }
     };
 
@@ -110,7 +105,7 @@ export default function PaymentCallback() {
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center">
         {status === "processing" && (
           <>
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-primary-900 mb-2">
               Processing Payment
             </h1>
@@ -136,7 +131,7 @@ export default function PaymentCallback() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-green-600 mb-2">
-              Payment Successful!
+              Payment Successful
             </h1>
             <p className="text-primary-700">{message}</p>
           </>
@@ -164,7 +159,7 @@ export default function PaymentCallback() {
             </h1>
             <p className="text-primary-700 mb-6">{message}</p>
             <button
-              onClick={() => router.push("/book-consultation")}
+              onClick={() => router.replace("/book-consultation")}
               className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
             >
               Try Again
@@ -173,5 +168,24 @@ export default function PaymentCallback() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PaymentCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-beige-50 flex items-center justify-center px-6">
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-primary-900 mb-2">
+              Loading...
+            </h1>
+          </div>
+        </div>
+      }
+    >
+      <PaymentStatusHandler />
+    </Suspense>
   );
 }
