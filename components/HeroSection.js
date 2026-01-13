@@ -58,6 +58,16 @@ export default function HeroSection() {
               className="w-full h-auto object-cover"
               priority
             />
+            {/* CTA Button for Mobile */}
+            <div className="flex flex-col items-center justify-center text-center px-4 py-4 bg-white">
+              {/* Primary CTA */}
+              <button
+                onClick={handleGBSIClick}
+                className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white font-semibold text-base sm:text-lg px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-4 focus:ring-primary-600/50"
+              >
+                Start My Free Gut Brain Sensitivity Index
+              </button>
+            </div>
           </div>
         </div>
       </div>

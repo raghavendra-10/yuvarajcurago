@@ -156,6 +156,8 @@ export async function POST(request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: reservation.name,
+          age: reservation.age,
+          gender: reservation.gender,
           phoneNumber: reservation.whatsapp,
           email: reservation.email,
           whatsapp: reservation.whatsapp,

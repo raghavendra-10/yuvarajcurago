@@ -40,7 +40,7 @@ export default function ScheduleConfirmation() {
             It looks like you haven't made a booking yet.
           </p>
           <Link
-            href="/book-consultation"
+            href="/myclinic"
             className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
           >
             Book Consultation
@@ -53,7 +53,7 @@ export default function ScheduleConfirmation() {
   return (
     <div className="min-h-screen bg-linear-to-b from-beige-50 to-white">
       <main className="container mx-auto px-6 py-16 md:py-24">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Success Card */}
           <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 animate-slide-up">
             {/* Success Icon */}
@@ -76,44 +76,20 @@ export default function ScheduleConfirmation() {
             </div>
 
             {/* Success Message */}
-            <h1 className="text-3xl md:text-4xl font-bold text-primary-600 mb-4 text-center">
-              Booking Confirmed! 🎉
+            <h1 className="text-3xl md:text-4xl font-bold text-primary-900 mb-4 text-center">
+              Thank You!
             </h1>
+            <h2 className="text-2xl md:text-3xl font-bold text-green-600 mb-6 text-center">
+              Your Booking is Confirmed.
+            </h2>
             <p className="text-center text-primary-800 mb-8 text-lg">
-              Your consultation has been successfully booked with Dr. Yuvaraj T
+              We have received your request for a consultation with Dr. Yuvaraj T.
             </p>
-
-            {/* Payment Success Badge */}
-            {bookingInfo.paymentId && (
-              <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-4 mb-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <svg
-                    className="w-6 h-6 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span className="text-lg font-bold text-green-800">
-                    Payment Successful
-                  </span>
-                </div>
-                <p className="text-sm text-green-700">
-                  Your payment has been verified and processed successfully
-                </p>
-              </div>
-            )}
 
             {/* Booking Details */}
             <div className="bg-beige-50 rounded-2xl p-6 md:p-8 mb-6 border-2 border-primary-200">
               <h2 className="text-xl font-bold text-primary-900 mb-4">
-                Booking Details
+                Your Booking Details
               </h2>
               <div className="space-y-3">
                 <div className="flex items-start">
@@ -140,164 +116,134 @@ export default function ScheduleConfirmation() {
                     {bookingInfo.mode === "online" ? "Online" : "In Clinic"}
                   </span>
                 </div>
-                {bookingInfo.paymentId && (
-                  <div className="flex items-start">
-                    <span className="text-primary-700 font-semibold w-32">Payment ID:</span>
-                    <span className="text-primary-900 font-mono text-sm break-all">
-                      {bookingInfo.paymentId}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Google Meet Link (if online) */}
-            {bookingInfo.mode === "online" && (
-              <div className="bg-blue-50 rounded-2xl p-6 md:p-8 mb-6 border-2 border-blue-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg
-                    className="w-6 h-6 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <h3 className="text-lg font-bold text-blue-900">
-                    Google Meet Link
-                  </h3>
-                </div>
-                {bookingInfo.meetLink ? (
-                  <>
-                    <p className="text-sm text-blue-700 mb-3">
-                      Join the online consultation using this link:
-                    </p>
-                    <a
-                      href={bookingInfo.meetLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
+            {/* Next Steps Section */}
+            <div className="bg-white rounded-2xl p-6 md:p-8 mb-6 border-2 border-primary-200">
+              <h2 className="text-2xl font-bold text-primary-900 mb-6">
+                Next Steps for Your Consultation
+              </h2>
+
+              <div className="space-y-6">
+                {/* For Online Consultations */}
+                {bookingInfo.mode === "online" && (
+                  <div className="bg-blue-50 rounded-xl p-5 border-2 border-blue-200">
+                    <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      Join Meeting
-                    </a>
-                    <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-                      <p className="text-xs text-blue-800">
-                        <strong>Save this link!</strong> You can also find it in the calendar invitation sent to your email.
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-blue-100 p-4 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Google Meet link will be sent to your email.</strong>
-                      <br/>Please check your inbox for the calendar invitation containing the meeting link.
+                      For Online Consultations
+                    </h3>
+                    <p className="text-blue-800 mb-3">
+                      A secure meeting link has been sent to your registered email address. Please check your <strong>Inbox or Spam</strong> folder for the invitation.
+                    </p>
+                    {bookingInfo.meetLink && (
+                      <a
+                        href={bookingInfo.meetLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Join Meeting
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* For In-Clinic Consultations */}
+                {bookingInfo.mode === "in-clinic" && (
+                  <div className="bg-green-50 rounded-xl p-5 border-2 border-green-200">
+                    <h3 className="font-bold text-green-900 mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      For In-Clinic (Offline) Consultations
+                    </h3>
+                    <p className="text-green-800">
+                      When you arrive at <strong>SRV Hospital, Chembur</strong>, please inform the reception counter that you have a <strong>CuraGo pre-booked consultation</strong> with Dr. Yuvaraj.
                     </p>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Important Information */}
-            <div className="bg-yellow-50 rounded-2xl p-6 md:p-8 mb-6 border-2 border-yellow-200">
-              <h3 className="text-lg font-bold text-yellow-900 mb-3 flex items-center gap-2">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Important Information
-              </h3>
-              <ul className="space-y-2 text-sm text-yellow-800">
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-600 mt-1">•</span>
-                  <span>
-                    <strong>Calendar invitation sent!</strong> Check your email for the appointment details
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-600 mt-1">•</span>
-                  <span>
-                    You will receive a confirmation via WhatsApp shortly
-                  </span>
-                </li>
-                {bookingInfo.mode === "online" && bookingInfo.meetLink && (
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-600 mt-1">•</span>
-                    <span>
-                      Save the Google Meet link above - you can also find it in your calendar invitation
-                    </span>
-                  </li>
-                )}
-                {bookingInfo.mode === "in-clinic" && (
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-600 mt-1">•</span>
-                    <span>
-                      Please arrive 10 minutes before your scheduled time
-                    </span>
-                  </li>
-                )}
-                {bookingInfo.paymentId ? (
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-600 mt-1">✓</span>
-                    <span className="font-semibold text-green-800">
-                      Payment completed successfully
-                    </span>
-                  </li>
-                ) : (
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-600 mt-1">•</span>
-                    <span className="font-semibold">
-                      Payment is required prior to the consultation
-                    </span>
-                  </li>
-                )}
-              </ul>
+                {/* Documentation */}
+                <div className="bg-accent-50 rounded-xl p-5 border-2 border-accent-200">
+                  <h3 className="font-bold text-primary-900 mb-2 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Documentation
+                  </h3>
+                  <p className="text-primary-800">
+                    Your official invoice and booking summary are currently being sent to your provided email ID.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/"
-                className="flex-1 text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105"
-              >
-                Back to Home
-              </Link>
+            {/* Important Guidelines */}
+            <div className="bg-yellow-50 rounded-2xl p-6 md:p-8 mb-6 border-2 border-yellow-200">
+              <h2 className="text-2xl font-bold text-yellow-900 mb-6 flex items-center gap-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Important Guidelines
+              </h2>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-yellow-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-yellow-900 mb-1">Punctuality</h3>
+                    <p className="text-yellow-800">
+                      Please show up exactly on time. There are other patients lined up, and sticking to your scheduled slot ensures a faster, more efficient consultation for everyone.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-yellow-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-yellow-900 mb-1">Preparation</h3>
+                    <p className="text-yellow-800">
+                      Keep your previous reports (Scans, Endoscopy, or Blood Tests) ready for review during the session.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-primary-200 my-8" />
+
+            {/* Need Assistance Section */}
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-primary-900 mb-4">
+                Need Assistance?
+              </h3>
+              <p className="text-primary-700 mb-6">
+                If you face any difficulties or need to reschedule, reach out to our team immediately.
+              </p>
               <a
-                href="https://wa.me/917021227203?text=Hi%2C%20I%20just%20booked%20a%20consultation"
+                href="https://wa.me/917021227203?text=Hi%2C%20I%20have%20booked%20a%20consultation%20via%20CuraGo.%20Please%20guide%20me%20with%20the%20next%20steps."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                 </svg>
-                Contact on WhatsApp
+                CHAT NOW
               </a>
             </div>
           </div>

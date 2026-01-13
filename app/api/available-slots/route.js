@@ -31,11 +31,26 @@ export async function GET(request) {
     const today = format(now, "yyyy-MM-dd");
     const currentTime = format(now, "HH:mm");
 
-    // Filter out past slots for today
+    // Filter out past slots and apply minimum booking time based on mode
     const filteredSlots = effectiveSlots.filter((slot) => {
-      // If the selected date is today, hide slots that have already passed
+      // If the selected date is today, apply time restrictions
       if (date === today) {
-        return slot.time > currentTime;
+        // Determine minimum booking time based on mode
+        // Online: 60 minutes in advance, Offline: 15 minutes in advance
+        const bufferMinutes = mode === "online" ? 60 : 15;
+
+        // Parse current time and slot time
+        const [currentHour, currentMinute] = currentTime.split(':').map(Number);
+        const [slotHour, slotMinute] = slot.time.split(':').map(Number);
+
+        // Convert to minutes since midnight for easy comparison
+        const currentTotalMinutes = currentHour * 60 + currentMinute;
+        const slotTotalMinutes = slotHour * 60 + slotMinute;
+
+        // Slot must be at least bufferMinutes in the future
+        // For example: If current time is 4:00 PM (16:00) and mode is online (60 min buffer)
+        // Only slots at 5:00 PM (17:00) or later will be shown
+        return slotTotalMinutes >= (currentTotalMinutes + bufferMinutes);
       }
       // For future dates, show all slots
       return true;
