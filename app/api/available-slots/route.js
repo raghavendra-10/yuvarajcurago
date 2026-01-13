@@ -3,14 +3,14 @@ import {
   getEffectiveSlotsForDate,
   isSlotBooked,
   releaseExpiredReservations,
-} from "@/lib/slotManager";
+} from "@/lib/slotManagerDB";
 import { format, addDays, startOfDay } from "date-fns";
 
 // GET - Get available slots for users
 export async function GET(request) {
   try {
     // Auto-cleanup expired reservations
-    releaseExpiredReservations();
+    await releaseExpiredReservations();
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
@@ -24,7 +24,7 @@ export async function GET(request) {
     }
 
     // Get effective slots for this date (considering date-specific overrides and blocks)
-    const effectiveSlots = getEffectiveSlotsForDate(date);
+    const effectiveSlots = await getEffectiveSlotsForDate(date);
 
     // Get current time (server is already in IST timezone)
     const now = new Date();
@@ -57,13 +57,17 @@ export async function GET(request) {
     });
 
     // Check which slots are already booked for the given date (regardless of mode)
-    const availableSlots = filteredSlots.map((slot) => {
-      const booked = isSlotBooked(date, slot.time);
-      return {
-        ...slot,
-        available: !booked,
-      };
-    });
+    const availableSlots = await Promise.all(
+      filteredSlots.map(async (slot) => {
+        const booked = await isSlotBooked(date, slot.time);
+        return {
+          time: slot.time,
+          label: slot.label,
+          active: slot.active,
+          available: !booked,
+        };
+      })
+    );
 
     // Generate next 7 days
     const todayStart = startOfDay(new Date());

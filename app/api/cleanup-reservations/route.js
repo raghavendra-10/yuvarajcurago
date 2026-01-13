@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { releaseExpiredReservations } from "@/lib/slotManager";
+import { releaseExpiredReservations } from "@/lib/slotManagerDB";
 
 // GET endpoint for cron job to cleanup expired reservations
 export async function GET(request) {
@@ -10,12 +10,12 @@ export async function GET(request) {
     //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     // }
 
-    const result = releaseExpiredReservations();
+    const expiredCount = await releaseExpiredReservations();
 
     return NextResponse.json({
       success: true,
-      message: `Cleaned up ${result.expiredCount} expired reservations`,
-      expiredCount: result.expiredCount,
+      message: `Cleaned up ${expiredCount} expired reservations`,
+      expiredCount,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

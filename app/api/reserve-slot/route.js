@@ -3,12 +3,12 @@ import {
   createReservation,
   isSlotBooked,
   releaseExpiredReservations,
-} from "@/lib/slotManager";
+} from "@/lib/slotManagerDB";
 
 export async function POST(request) {
   try {
     // Auto-cleanup expired reservations before checking availability
-    releaseExpiredReservations();
+    await releaseExpiredReservations();
 
     const { name, age, gender, whatsapp, email, modeOfContact, date, time } =
       await request.json();
@@ -22,7 +22,8 @@ export async function POST(request) {
     }
 
     // Check if slot is already booked or reserved
-    if (isSlotBooked(date, time)) {
+    const isBooked = await isSlotBooked(date, time);
+    if (isBooked) {
       return NextResponse.json(
         { error: "This time slot is already booked or reserved" },
         { status: 409 }
@@ -30,7 +31,7 @@ export async function POST(request) {
     }
 
     // Create temporary reservation (10-minute hold)
-    const reservation = createReservation({
+    const reservation = await createReservation({
       name,
       age,
       gender,

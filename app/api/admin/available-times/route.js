@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { getAllSlots } from "@/lib/slotManager";
+import { getAllSlots } from "@/lib/slotManagerDB";
 
 // GET - Get available time slots for a specific date
 export async function GET(request) {
@@ -36,7 +36,7 @@ export async function GET(request) {
     };
 
     // Get all existing slots from the system
-    const existingSlots = getAllSlots();
+    const existingSlots = await getAllSlots();
     const existingTimes = existingSlots.map(slot => slot.time);
 
     // Generate all possible time slots (full day: 00:00 to 23:30 in 30-min intervals)

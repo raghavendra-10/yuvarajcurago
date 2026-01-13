@@ -5,10 +5,9 @@ import {
   unblockDate,
   getBlockedDates,
   setDateSlotOverrides,
-  getDateSlotOverrides,
-  clearDateSlotOverrides,
   getAllDateOverrides,
-} from "@/lib/slotManager";
+  clearDateOverride,
+} from "@/lib/slotManagerDB";
 
 // GET - Get all date overrides
 export async function GET(request) {
@@ -17,7 +16,7 @@ export async function GET(request) {
   }
 
   try {
-    const overrides = getAllDateOverrides();
+    const overrides = await getAllDateOverrides();
     return NextResponse.json({
       success: true,
       overrides,
@@ -51,11 +50,11 @@ export async function POST(request) {
 
     switch (action) {
       case "block":
-        result = blockDate(date, reason);
+        result = await blockDate(date, reason);
         break;
 
       case "unblock":
-        result = unblockDate(date);
+        result = await unblockDate(date);
         break;
 
       case "setSlots":
@@ -65,11 +64,12 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        result = setDateSlotOverrides(date, slotOverrides);
+        result = await setDateSlotOverrides(date, slotOverrides);
         break;
 
       case "clearSlots":
-        result = clearDateSlotOverrides(date);
+        // Clear custom slots by deleting the date override
+        result = await clearDateOverride(date);
         break;
 
       default:

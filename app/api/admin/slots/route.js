@@ -6,7 +6,7 @@ import {
   addSlot,
   removeSlot,
   getAllBookings,
-} from "@/lib/slotManager";
+} from "@/lib/slotManagerDB";
 
 // GET - Get all slots (admin view)
 export async function GET(request) {
@@ -15,8 +15,8 @@ export async function GET(request) {
   }
 
   try {
-    const slots = getAllSlots();
-    const bookings = getAllBookings();
+    const slots = await getAllSlots();
+    const bookings = await getAllBookings();
 
     return NextResponse.json({
       success: true,
@@ -59,7 +59,7 @@ export async function POST(request) {
     // Auto-generate label from time (e.g., "17:00" -> "5:00 PM")
     const label = formatTimeLabel(time);
 
-    const result = addSlot(time, label);
+    const result = await addSlot(time, label);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error adding slot:", error);
@@ -86,15 +86,12 @@ export async function PATCH(request) {
       );
     }
 
-    const success = updateSlotStatus(time, active);
-    if (success) {
-      return NextResponse.json({
-        success: true,
-        message: "Slot status updated",
-      });
-    } else {
-      return NextResponse.json({ error: "Slot not found" }, { status: 404 });
-    }
+    const slot = await updateSlotStatus(time, active);
+    return NextResponse.json({
+      success: true,
+      message: "Slot status updated",
+      slot,
+    });
   } catch (error) {
     console.error("Error updating slot:", error);
     return NextResponse.json(
@@ -121,7 +118,7 @@ export async function DELETE(request) {
       );
     }
 
-    const result = removeSlot(time);
+    const result = await removeSlot(time);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error removing slot:", error);

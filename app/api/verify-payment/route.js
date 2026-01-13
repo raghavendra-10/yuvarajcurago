@@ -3,7 +3,7 @@ import crypto from "crypto";
 import {
   confirmReservation,
   getReservationById,
-} from "@/lib/slotManager";
+} from "@/lib/slotManagerDB";
 import { createCalendarEvent } from "@/lib/googleCalendar";
 
 // Verify Razorpay payment signature
@@ -94,7 +94,7 @@ export async function POST(request) {
     }
 
     // Get reservation details
-    const reservation = getReservationById(reservationId);
+    const reservation = await getReservationById(reservationId);
 
     if (!reservation) {
       return NextResponse.json(
@@ -134,7 +134,7 @@ export async function POST(request) {
     }
 
     // Confirm the reservation (convert to confirmed booking)
-    const confirmResult = confirmReservation(reservationId, {
+    const confirmResult = await confirmReservation(reservationId, {
       paymentId: razorpay_payment_id,
       paymentSignature: razorpay_signature,
       eventId: calendarEvent.eventId,
