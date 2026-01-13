@@ -86,6 +86,15 @@ body {
   }
 }
 
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 2));
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.8s ease-out;
 }
@@ -100,4 +109,9 @@ body {
 
 .animate-slide-in-right {
   animation: slideInRight 0.8s ease-out;
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+  width: max-content;
 }

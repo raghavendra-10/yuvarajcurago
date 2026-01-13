@@ -26,10 +26,12 @@ export async function GET(request) {
     // Get effective slots for this date (considering date-specific overrides and blocks)
     const effectiveSlots = await getEffectiveSlotsForDate(date);
 
-    // Get current time (server is already in IST timezone)
+    // Get current time in IST (UTC + 5:30)
     const now = new Date();
-    const today = format(now, "yyyy-MM-dd");
-    const currentTime = format(now, "HH:mm");
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const istTime = new Date(now.getTime() + istOffset + now.getTimezoneOffset() * 60 * 1000);
+    const today = format(istTime, "yyyy-MM-dd");
+    const currentTime = format(istTime, "HH:mm");
 
     // Filter out past slots and apply minimum booking time based on mode
     const filteredSlots = effectiveSlots.filter((slot) => {
