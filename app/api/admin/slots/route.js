@@ -113,8 +113,15 @@ export async function DELETE(request) {
   }
 
   try {
+    // Support both query params and request body
     const { searchParams } = new URL(request.url);
-    const time = searchParams.get("time");
+    let time = searchParams.get("time");
+
+    // If not in query params, try to get from body
+    if (!time) {
+      const body = await request.json();
+      time = body.time;
+    }
 
     if (!time) {
       return NextResponse.json(
@@ -137,36 +144,69 @@ export async function DELETE(request) {
   }
 }
 
-// PUT - Cancel booking to re-enable a booked slot (mode-specific)
+// PUT - Cancel booking to re-enable a booked slot
 export async function PUT(request) {
   if (!isAuthenticated(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { date, time, mode } = await request.json();
+    const body = await request.json();
+    const { date, time, mode, bookingId } = body;
 
-    if (!date || !time) {
-      return NextResponse.json(
-        { error: "Date and time are required" },
-        { status: 400 }
-      );
+    // Support both old (date/time/mode) and new (bookingId) formats
+    if (bookingId) {
+      // New format: cancel by booking ID
+      const Booking = (await import("@/models/Booking")).default;
+      await import("@/lib/db");
+
+      const booking = await Booking.findById(bookingId);
+
+      if (!booking) {
+        return NextResponse.json(
+          { error: "Booking not found" },
+          { status: 404 }
+        );
+      }
+
+      const result = await cancelBooking(booking.date, booking.time, booking.mode);
+
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.message },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Booking cancelled and slot re-enabled successfully`,
+        booking: result.booking,
+      });
+    } else {
+      // Old format: cancel by date/time/mode
+      if (!date || !time) {
+        return NextResponse.json(
+          { error: "Date and time (or bookingId) are required" },
+          { status: 400 }
+        );
+      }
+
+      const result = await cancelBooking(date, time, mode);
+
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.message },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Booking cancelled and slot re-enabled successfully${mode ? ` for ${mode}` : ''}`,
+        booking: result.booking,
+      });
     }
-
-    const result = await cancelBooking(date, time, mode);
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.message },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Booking cancelled and slot re-enabled successfully${mode ? ` for ${mode}` : ''}`,
-      booking: result.booking,
-    });
   } catch (error) {
     console.error("Error cancelling booking:", error);
     return NextResponse.json(

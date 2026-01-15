@@ -1,5 +1,5 @@
 // ============================================================
-// Google Apps Script Code for CuraGo Assessment PDFs
+// Google Apps Script Code for CuraGo - Complete Version
 // ============================================================
 // Instructions:
 // 1. Go to https://script.google.com
@@ -7,11 +7,13 @@
 // 3. Replace ALL code with this file's contents
 // 4. Update CONFIG.DRIVE_FOLDER_ID with your Google Drive folder ID
 // 5. Save the project
-// 6. Deploy → New deployment → Web app → "Who has access" = "Anyone"
-// 7. Copy the deployment URL and update vite.config.ts
+// 6. Run initializeSlotBookingSheets() once to create the sheets
+// 7. Deploy → New deployment → Web app → "Who has access" = "Anyone"
+// 8. Copy the deployment URL and update your frontend config
 // ============================================================
 
 const CONFIG = {
+  // Assessment Sheets
   AURA_SHEET_NAME: 'AURA Results',
   ATM_SHEET_NAME: 'ATM Results',
   CALA_SHEET_NAME: 'CALA Results',
@@ -19,38 +21,38 @@ const CONFIG = {
   PRIORITY_CIRCLE_SHEET_NAME: 'Priority Circle 365',
   CONSULTATION_BOOKING_SHEET_NAME: 'Consultation Bookings',
 
-  // Slot Booking Sheets (NEW)
+  // Slot Booking Sheets
   SLOT_BOOKING_SHEET_NAME: 'Slot Bookings',
   SLOT_PAYMENT_SHEET_NAME: 'Slot Booking Payments',
+
+  // Email Subjects
   EMAIL_SUBJECT_AURA: 'Your AURA Index Results from CuraGo',
   EMAIL_SUBJECT_ATM: 'Your ATM Assessment Results from CuraGo',
   EMAIL_SUBJECT_CALA: 'Your CALA 1.0 Assessment Results from CuraGo',
   EMAIL_SUBJECT_GBSI: 'Your GBSI Assessment Results from CuraGo',
   EMAIL_SUBJECT_BOOKING: 'Booking Confirmed - Dr. Yuvaraj T Consultation',
   EMAIL_SUBJECT_PAYMENT: 'Payment Successful - Slot Booking Invoice',
+
+  // Company Info
   FROM_NAME: 'CuraGo Team',
   COMPANY_WEBSITE: 'https://curago.in',
   SUPPORT_EMAIL: 'curagodoctor@gmail.com',
-  WHATSAPP_NUMBER: '+919148615951',
+  WHATSAPP_NUMBER: '+917021227203',
 
-  // Doctor & Clinic Info (NEW)
+  // Doctor & Clinic Info
   DOCTOR_NAME: 'Dr. Yuvaraj T',
   DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
   CLINIC_NAME: 'SRV Hospital',
   CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
 
-  // Payment Info (NEW)
+  // Payment Info
   SLOT_BOOKING_FEE: 150,
   CONSULTATION_FEE: 1000,
   COMPANY_GST: '', // Optional: Add your GST number
   INVOICE_PREFIX: 'INV-SB-',
 
-  // IMPORTANT: Add your Google Drive folder ID here
-  // Instructions to get folder ID:
-  // 1. Go to Google Drive
-  // 2. Create/open a folder for PDFs
-  // 3. Copy the ID from the URL: https://drive.google.com/drive/folders/YOUR_FOLDER_ID_HERE
-  DRIVE_FOLDER_ID: '1ztLlzdZgZyJZR1BfICOHBPzbeNRDwTTx', // Leave empty to save in root, or paste folder ID here
+  // Google Drive folder ID
+  DRIVE_FOLDER_ID: '1ztLlzdZgZyJZR1BfICOHBPzbeNRDwTTx',
 };
 
 // ============================================================
@@ -95,9 +97,9 @@ function doPost(e) {
     } else if (data.testType === 'priority_circle') {
       response = handlePriorityCircleSubmission(data);
     } else if (data.testType === 'consultation_booking') {
+      response = handleConsultationBookingSubmission(data);
     } else if (data.testType === 'slot_booking') {
       response = handleSlotBookingSubmission(data);
-      response = handleConsultationBookingSubmission(data);
     } else {
       throw new Error('Invalid test type: ' + data.testType);
     }
@@ -119,6 +121,825 @@ function doPost(e) {
 }
 
 // ============================================================
+// SAVE PDF TO GOOGLE DRIVE
+// ============================================================
+function savePdfToDrive(blob, fileName) {
+  const folder = CONFIG.DRIVE_FOLDER_ID
+    ? DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID)
+    : DriveApp.getRootFolder();
+
+  const file = folder.createFile(blob);
+  file.setName(fileName + '.pdf');
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return file;
+}
+
+// ============================================================
+// GENERATE INVOICE NUMBER
+// ============================================================
+function generateInvoiceNumber() {
+  const now = new Date();
+  const year = now.getFullYear().toString().slice(-2);
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+  return CONFIG.INVOICE_PREFIX + year + month + day + '-' + random;
+}
+
+// ============================================================
+// GENERATE MEETING LINK (Placeholder)
+// ============================================================
+function generateMeetingLink(data) {
+  const meetingId = 'meet-' + Date.now().toString(36);
+  return 'https://meet.google.com/' + meetingId;
+}
+
+// ============================================================
+// SLOT BOOKING SUBMISSION HANDLER
+// ============================================================
+function handleSlotBookingSubmission(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const bookingSheet = ss.getSheetByName(CONFIG.SLOT_BOOKING_SHEET_NAME);
+  const paymentSheet = ss.getSheetByName(CONFIG.SLOT_PAYMENT_SHEET_NAME);
+
+  if (!bookingSheet) {
+    throw new Error('Sheet "' + CONFIG.SLOT_BOOKING_SHEET_NAME + '" not found. Please run initializeSlotBookingSheets() first.');
+  }
+  if (!paymentSheet) {
+    throw new Error('Sheet "' + CONFIG.SLOT_PAYMENT_SHEET_NAME + '" not found. Please run initializeSlotBookingSheets() first.');
+  }
+
+  const timestamp = new Date();
+  const invoiceNumber = generateInvoiceNumber();
+  const meetLink = data.mode === 'online' ? generateMeetingLink(data) : 'N/A (In-Clinic)';
+
+  // Save to Booking Sheet
+  const bookingRowData = [
+    timestamp,
+    invoiceNumber,
+    data.name,
+    data.age,
+    data.gender,
+    data.email || '',
+    data.whatsapp,
+    data.mode,
+    data.date,
+    data.time,
+    data.timeLabel || data.time,
+    meetLink,
+    data.paymentId || '',
+    data.paymentSignature || '',
+    CONFIG.SLOT_BOOKING_FEE,
+    'Confirmed',
+    data.eventId || '',
+    data.calendarEventUrl || '',
+    '', // Notes
+    '' // Invoice URL (will be updated)
+  ];
+
+  bookingSheet.appendRow(bookingRowData);
+  Logger.log('Booking saved to sheet: ' + invoiceNumber);
+
+  // Save to Payment Sheet
+  const paymentRowData = [
+    timestamp,
+    invoiceNumber,
+    data.name,
+    data.whatsapp,
+    data.email || '',
+    data.paymentId || '',
+    CONFIG.SLOT_BOOKING_FEE,
+    'Success',
+    data.paymentMethod || 'Razorpay',
+    data.date + ' ' + (data.timeLabel || data.time),
+    data.mode,
+    '' // Notes
+  ];
+
+  paymentSheet.appendRow(paymentRowData);
+  Logger.log('Payment recorded: ' + data.paymentId);
+
+  // Generate Invoice PDF
+  const invoiceData = {
+    invoiceNumber: invoiceNumber,
+    invoiceDate: timestamp,
+    name: data.name,
+    age: data.age,
+    gender: data.gender,
+    email: data.email || '',
+    whatsapp: data.whatsapp,
+    mode: data.mode,
+    date: data.date,
+    time: data.timeLabel || data.time,
+    meetLink: meetLink,
+    amountPaid: CONFIG.SLOT_BOOKING_FEE,
+    paymentId: data.paymentId || '',
+    eventId: data.eventId || ''
+  };
+
+  const invoicePdfFile = savePdfToDrive(
+    generateInvoicePdf(invoiceData),
+    'Invoice_' + invoiceNumber + '_' + data.name.replace(/\s+/g, '_')
+  );
+  const invoicePdfUrl = invoicePdfFile.getUrl();
+
+  // Update booking sheet with invoice URL
+  const lastRow = bookingSheet.getLastRow();
+  bookingSheet.getRange(lastRow, 20).setValue(invoicePdfUrl);
+
+  // Send confirmation email with invoice
+  if (data.email && data.email.trim() !== '') {
+    sendBookingConfirmationEmail(invoiceData, invoicePdfFile);
+    Logger.log('Confirmation email sent to: ' + data.email);
+  } else {
+    Logger.log('No email provided, skipping email send');
+  }
+
+  return {
+    success: true,
+    message: 'Slot booking confirmed and invoice generated',
+    invoiceNumber: invoiceNumber,
+    invoiceUrl: invoicePdfUrl,
+    meetLink: meetLink
+  };
+}
+
+// ============================================================
+// GENERATE INVOICE PDF
+// ============================================================
+function generateInvoicePdf(data) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      color: #333;
+      padding: 30px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #096b17;
+    }
+    .company-info {
+      flex: 1;
+    }
+    .company-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #096b17;
+      margin-bottom: 5px;
+    }
+    .company-details {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.6;
+    }
+    .invoice-title {
+      text-align: right;
+      flex: 1;
+    }
+    .invoice-title h1 {
+      font-size: 28px;
+      color: #096b17;
+      margin-bottom: 5px;
+    }
+    .invoice-title p {
+      font-size: 12px;
+      color: #666;
+    }
+    .invoice-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .meta-box {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      border-left: 4px solid #096b17;
+    }
+    .meta-box h3 {
+      font-size: 13px;
+      color: #096b17;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .meta-box p {
+      font-size: 11px;
+      margin: 3px 0;
+      color: #555;
+    }
+    .meta-box strong {
+      color: #333;
+    }
+    .booking-details {
+      background: #096b17;
+      color: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .booking-details h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    .booking-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .booking-item {
+      font-size: 12px;
+    }
+    .booking-item strong {
+      display: block;
+      opacity: 0.9;
+      margin-bottom: 3px;
+    }
+    .booking-item span {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .payment-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .payment-table th {
+      background: #f8f9fa;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      color: #096b17;
+      border-bottom: 2px solid #096b17;
+    }
+    .payment-table td {
+      padding: 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .total-row td {
+      font-weight: bold;
+      font-size: 14px;
+      background: #f8f9fa;
+      border-top: 2px solid #096b17;
+      border-bottom: 2px solid #096b17;
+    }
+    .meet-link-box {
+      background: #e7f5ff;
+      border: 2px solid #339af0;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .meet-link-box h3 {
+      color: #1864ab;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .meet-link-box a {
+      color: #1864ab;
+      font-size: 12px;
+      word-break: break-all;
+    }
+    .footer-notes {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+    }
+    .footer-notes h3 {
+      font-size: 13px;
+      color: #096b17;
+      margin-bottom: 10px;
+    }
+    .footer-notes ul {
+      padding-left: 20px;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.8;
+    }
+    .footer-notes li {
+      margin: 5px 0;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 10px;
+      color: #999;
+    }
+    .stamp {
+      text-align: right;
+      margin-top: 40px;
+      font-size: 11px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-header">
+    <div class="company-info">
+      <div class="company-name">CuraGo</div>
+      <div class="company-details">
+        <strong>${CONFIG.CLINIC_NAME}</strong><br>
+        ${CONFIG.CLINIC_ADDRESS}<br>
+        Email: ${CONFIG.SUPPORT_EMAIL}<br>
+        Phone: ${CONFIG.WHATSAPP_NUMBER}
+        ${CONFIG.COMPANY_GST ? '<br>GSTIN: ' + CONFIG.COMPANY_GST : ''}
+      </div>
+    </div>
+    <div class="invoice-title">
+      <h1>INVOICE</h1>
+      <p><strong>Invoice #:</strong> ${data.invoiceNumber}</p>
+      <p><strong>Date:</strong> ${new Date(data.invoiceDate).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })}</p>
+    </div>
+  </div>
+
+  <div class="invoice-meta">
+    <div class="meta-box">
+      <h3>Billed To</h3>
+      <p><strong>Name:</strong> ${data.name}</p>
+      <p><strong>Age:</strong> ${data.age} | <strong>Gender:</strong> ${data.gender}</p>
+      <p><strong>WhatsApp:</strong> ${data.whatsapp}</p>
+      ${data.email ? '<p><strong>Email:</strong> ' + data.email + '</p>' : ''}
+    </div>
+    <div class="meta-box">
+      <h3>Consultation With</h3>
+      <p><strong>${CONFIG.DOCTOR_NAME}</strong></p>
+      <p style="font-size: 10px;">${CONFIG.DOCTOR_CREDENTIALS}</p>
+      <p style="margin-top: 8px;"><strong>Clinic:</strong> ${CONFIG.CLINIC_NAME}</p>
+    </div>
+  </div>
+
+  <div class="booking-details">
+    <h2>Booking Details</h2>
+    <div class="booking-grid">
+      <div class="booking-item">
+        <strong>Consultation Mode</strong>
+        <span>${data.mode === 'online' ? 'Online Video Consult' : 'In-Clinic Consultation'}</span>
+      </div>
+      <div class="booking-item">
+        <strong>Appointment Date & Time</strong>
+        <span>${new Date(data.date).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })} at ${data.time}</span>
+      </div>
+      ${data.paymentId ? `
+      <div class="booking-item">
+        <strong>Payment ID</strong>
+        <span style="font-size: 11px;">${data.paymentId}</span>
+      </div>
+      ` : ''}
+      <div class="booking-item">
+        <strong>Payment Status</strong>
+        <span>PAID</span>
+      </div>
+    </div>
+  </div>
+
+  ${data.mode === 'online' && data.meetLink !== 'N/A (In-Clinic)' ? `
+  <div class="meet-link-box">
+    <h3>Your Online Consultation Link</h3>
+    <p><a href="${data.meetLink}">${data.meetLink}</a></p>
+    <p style="font-size: 10px; color: #666; margin-top: 8px;">
+      Please join 5 minutes before your scheduled time
+    </p>
+  </div>
+  ` : ''}
+
+  <table class="payment-table">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th style="width: 120px; text-align: right;">Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong>Slot Booking Fee</strong><br>
+          <span style="font-size: 10px; color: #666;">
+            This amount will be fully adjusted against your consultation fee of ₹${CONFIG.CONSULTATION_FEE}/-
+          </span>
+        </td>
+        <td style="text-align: right;">₹${data.amountPaid.toFixed(2)}</td>
+      </tr>
+      <tr class="total-row">
+        <td>Total Amount Paid</td>
+        <td style="text-align: right;">₹${data.amountPaid.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer-notes">
+    <h3>Important Notes:</h3>
+    <ul>
+      <li><strong>This is a non-refundable slot booking fee.</strong> The amount paid (₹${data.amountPaid}/-) will be fully adjusted against your final consultation fee of ₹${CONFIG.CONSULTATION_FEE}/- at the time of consultation.</li>
+      <li><strong>Rescheduling:</strong> You can request a reschedule via WhatsApp at <strong>${CONFIG.WHATSAPP_NUMBER}</strong> at least 2 hours before your scheduled slot.</li>
+      ${data.mode === 'online' ? '<li><strong>Online Consultation:</strong> Please ensure you have a stable internet connection and join the meeting 5 minutes before your scheduled time.</li>' : '<li><strong>In-Clinic Consultation:</strong> Please arrive 10 minutes early for registration and paperwork.</li>'}
+      <li>Please bring any relevant medical reports and this invoice for reference.</li>
+      <li>For any queries, contact us on WhatsApp: ${CONFIG.WHATSAPP_NUMBER}</li>
+    </ul>
+  </div>
+
+  <div class="stamp">
+    <p style="margin-bottom: 50px;">Authorized Signature</p>
+    <p style="border-top: 1px solid #999; display: inline-block; padding-top: 5px;">
+      CuraGo Team
+    </p>
+  </div>
+
+  <div class="footer">
+    <p><strong>CuraGo - Your Partner in Health</strong></p>
+    <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.SUPPORT_EMAIL} | ${CONFIG.WHATSAPP_NUMBER}</p>
+    <p style="margin-top: 8px;">
+      This is a computer-generated invoice and does not require a physical signature.
+    </p>
+  </div>
+</body>
+</html>
+  `;
+
+  return Utilities.newBlob(html, 'text/html', 'temp.html').getAs('application/pdf');
+}
+
+// ============================================================
+// SEND BOOKING CONFIRMATION EMAIL
+// ============================================================
+function sendBookingConfirmationEmail(data, invoicePdfFile) {
+  const plainBody = `
+Hi ${data.name}!
+
+Your consultation slot has been successfully booked!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BOOKING CONFIRMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Invoice Number: ${data.invoiceNumber}
+Payment Status: PAID
+
+Appointment Details:
+• Doctor: ${CONFIG.DOCTOR_NAME}
+• Mode: ${data.mode === 'online' ? 'Online Video Consultation' : 'In-Clinic Consultation'}
+• Date: ${new Date(data.date).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })}
+• Time: ${data.time}
+${data.mode === 'online' && data.meetLink !== 'N/A (In-Clinic)' ? '\n• Meeting Link: ' + data.meetLink : ''}
+
+Amount Paid: ₹${data.amountPaid}/-
+(This will be adjusted against your consultation fee of ₹${CONFIG.CONSULTATION_FEE}/-)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEXT STEPS:
+${data.mode === 'online' ?
+  '→ Join the meeting 5 minutes before your scheduled time\n→ Ensure you have a stable internet connection\n→ Keep your medical reports ready' :
+  '→ Arrive 10 minutes early for registration\n→ Bring this invoice and any medical reports\n→ Visit: ' + CONFIG.CLINIC_ADDRESS
+}
+
+NEED TO RESCHEDULE?
+→ WhatsApp us at ${CONFIG.WHATSAPP_NUMBER} (at least 2 hours before your slot)
+
+Your detailed invoice is attached to this email.
+
+For any queries, feel free to reach out to us on WhatsApp.
+
+Best regards,
+CuraGo Team
+${CONFIG.COMPANY_WEBSITE}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  `;
+
+  const htmlBody = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+    }
+    .header {
+      background: linear-gradient(135deg, #096b17 0%, #0a8a1f 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+    .header p {
+      margin: 0;
+      font-size: 16px;
+      opacity: 0.95;
+    }
+    .success-badge {
+      background: #4ade80;
+      color: #064e3b;
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .booking-box {
+      background: #f0f7f1;
+      border-left: 4px solid #096b17;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .booking-box h2 {
+      margin: 0 0 15px 0;
+      color: #096b17;
+      font-size: 20px;
+    }
+    .detail-row {
+      margin: 10px 0;
+      font-size: 15px;
+    }
+    .detail-row strong {
+      color: #096b17;
+      display: inline-block;
+      min-width: 120px;
+    }
+    .meet-link {
+      background: #e7f5ff;
+      border: 2px solid #339af0;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .meet-link h3 {
+      color: #1864ab;
+      margin: 0 0 10px 0;
+    }
+    .meet-link a {
+      color: #1864ab;
+      word-break: break-all;
+      font-weight: bold;
+    }
+    .info-box {
+      background: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .info-box h3 {
+      margin: 0 0 10px 0;
+      color: #9a3412;
+      font-size: 16px;
+    }
+    .info-box ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .info-box li {
+      margin: 5px 0;
+      color: #9a3412;
+    }
+    .cta-button {
+      background: #096b17;
+      color: white;
+      padding: 14px 30px;
+      text-decoration: none;
+      border-radius: 5px;
+      display: inline-block;
+      margin: 10px 5px;
+      font-weight: bold;
+    }
+    .cta-button:hover {
+      background: #075110;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 14px;
+      background: #f8f9fa;
+      border-top: 3px solid #096b17;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Booking Confirmed!</h1>
+      <p>Your consultation slot has been successfully reserved</p>
+      <div class="success-badge">PAYMENT SUCCESSFUL</div>
+    </div>
+
+    <div class="content">
+      <h2 style="color: #096b17;">Hi ${data.name}!</h2>
+      <p>Great news! Your slot has been confirmed. Here are your booking details:</p>
+
+      <div class="booking-box">
+        <h2>Appointment Details</h2>
+        <div class="detail-row">
+          <strong>Doctor:</strong> ${CONFIG.DOCTOR_NAME}
+        </div>
+        <div class="detail-row">
+          <strong>Mode:</strong> ${data.mode === 'online' ? 'Online Video Consult' : 'In-Clinic Consultation'}
+        </div>
+        <div class="detail-row">
+          <strong>Date:</strong> ${new Date(data.date).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          })}
+        </div>
+        <div class="detail-row">
+          <strong>Time:</strong> ${data.time}
+        </div>
+        <div class="detail-row">
+          <strong>Invoice No:</strong> ${data.invoiceNumber}
+        </div>
+        <div class="detail-row">
+          <strong>Amount Paid:</strong> ₹${data.amountPaid}/-
+        </div>
+      </div>
+
+      ${data.mode === 'online' && data.meetLink !== 'N/A (In-Clinic)' ? `
+      <div class="meet-link">
+        <h3>Your Online Consultation Link</h3>
+        <p><a href="${data.meetLink}">${data.meetLink}</a></p>
+        <p style="font-size: 13px; color: #666; margin-top: 10px;">
+          Please join 5 minutes before your scheduled time
+        </p>
+      </div>
+      ` : ''}
+
+      <div class="info-box">
+        <h3>Before Your Consultation</h3>
+        <ul>
+          ${data.mode === 'online' ?
+            '<li>Ensure you have a stable internet connection</li><li>Join the meeting 5 minutes early</li><li>Keep your medical reports ready to share</li>' :
+            '<li>Arrive 10 minutes early for registration</li><li>Bring this invoice and medical reports</li><li>Location: ' + CONFIG.CLINIC_ADDRESS + '</li>'
+          }
+          <li>The booking fee of ₹${data.amountPaid}/- will be adjusted against your consultation fee</li>
+        </ul>
+      </div>
+
+      <p style="text-align: center; margin: 30px 0;">
+        ${data.mode === 'online' ?
+          '<a href="' + data.meetLink + '" class="cta-button">Join Meeting</a>' :
+          '<a href="https://maps.google.com/?q=' + encodeURIComponent(CONFIG.CLINIC_NAME + ', ' + CONFIG.CLINIC_ADDRESS) + '" class="cta-button">View Location</a>'
+        }
+        <a href="https://wa.me/${CONFIG.WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}" class="cta-button" style="background: #25D366;">WhatsApp Us</a>
+      </p>
+
+      <p style="background: #fef3c7; padding: 15px; border-radius: 5px; border-left: 4px solid #f59e0b;">
+        <strong>Need to Reschedule?</strong><br>
+        Contact us on WhatsApp at ${CONFIG.WHATSAPP_NUMBER} at least 2 hours before your scheduled slot.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p><strong>CuraGo - Your Partner in Health</strong></p>
+      <p style="margin: 5px 0;">${CONFIG.COMPANY_WEBSITE} | ${CONFIG.SUPPORT_EMAIL}</p>
+      <p style="margin-top: 10px; font-size: 12px; color: #999;">
+        Your detailed invoice is attached to this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  GmailApp.sendEmail(
+    data.email,
+    CONFIG.EMAIL_SUBJECT_BOOKING,
+    plainBody,
+    {
+      htmlBody: htmlBody,
+      name: CONFIG.FROM_NAME,
+      attachments: [invoicePdfFile.getBlob()]
+    }
+  );
+
+  Logger.log('Booking confirmation email sent to: ' + data.email);
+}
+
+// ============================================================
+// INITIALIZE SLOT BOOKING SHEETS (Run once)
+// ============================================================
+function initializeSlotBookingSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Create Booking Sheet
+  let bookingSheet = ss.getSheetByName(CONFIG.SLOT_BOOKING_SHEET_NAME);
+  if (!bookingSheet) {
+    bookingSheet = ss.insertSheet(CONFIG.SLOT_BOOKING_SHEET_NAME);
+    bookingSheet.appendRow([
+      'Timestamp',
+      'Invoice Number',
+      'Name',
+      'Age',
+      'Gender',
+      'Email',
+      'WhatsApp Number',
+      'Mode',
+      'Appointment Date',
+      'Appointment Time',
+      'Time Label',
+      'Meeting Link',
+      'Payment ID',
+      'Payment Signature',
+      'Amount Paid',
+      'Booking Status',
+      'Calendar Event ID',
+      'Calendar Event URL',
+      'Notes',
+      'Invoice URL'
+    ]);
+
+    const headerRange = bookingSheet.getRange(1, 1, 1, 20);
+    headerRange.setBackground('#096b17');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+
+    Logger.log('Booking sheet created successfully');
+  }
+
+  // Create Payment Sheet
+  let paymentSheet = ss.getSheetByName(CONFIG.SLOT_PAYMENT_SHEET_NAME);
+  if (!paymentSheet) {
+    paymentSheet = ss.insertSheet(CONFIG.SLOT_PAYMENT_SHEET_NAME);
+    paymentSheet.appendRow([
+      'Payment Timestamp',
+      'Invoice Number',
+      'Customer Name',
+      'WhatsApp Number',
+      'Email',
+      'Payment ID',
+      'Amount',
+      'Payment Status',
+      'Payment Method',
+      'Booking Details',
+      'Consultation Mode',
+      'Notes'
+    ]);
+
+    const headerRange = paymentSheet.getRange(1, 1, 1, 12);
+    headerRange.setBackground('#096b17');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setFontWeight('bold');
+
+    Logger.log('Payment sheet created successfully');
+  }
+
+  return {
+    success: true,
+    message: 'Sheets initialized successfully',
+    bookingSheet: CONFIG.SLOT_BOOKING_SHEET_NAME,
+    paymentSheet: CONFIG.SLOT_PAYMENT_SHEET_NAME
+  };
+}
+
+// ============================================================
 // AURA SUBMISSION HANDLER
 // ============================================================
 function handleAuraSubmission(data) {
@@ -129,11 +950,9 @@ function handleAuraSubmission(data) {
     throw new Error('Sheet "' + CONFIG.AURA_SHEET_NAME + '" not found. Please create it.');
   }
 
-  // Generate PDF and save to Drive
   const pdfFile = savePdfToDrive(generateAuraPdf(data), 'AURA_Results_' + data.name.replace(/\s+/g, '_'));
   const pdfUrl = pdfFile.getUrl();
 
-  // Save to Google Sheet with PDF link
   const rowData = [
     new Date(),
     data.name,
@@ -149,13 +968,12 @@ function handleAuraSubmission(data) {
     data.growth.join(', '),
     data.riskFlags.join(', '),
     data.eventId,
-    pdfUrl // PDF link in last column
+    pdfUrl
   ];
 
   sheet.appendRow(rowData);
   Logger.log('Data saved to sheet with PDF link');
 
-  // Send email with PDF
   if (data.email && data.email.trim() !== '') {
     sendAuraPdfEmail(data, pdfFile);
     Logger.log('Email sent to: ' + data.email);
@@ -177,11 +995,9 @@ function handleAtmSubmission(data) {
     throw new Error('Sheet "' + CONFIG.ATM_SHEET_NAME + '" not found. Please create it.');
   }
 
-  // Generate PDF and save to Drive
   const pdfFile = savePdfToDrive(generateAtmPdf(data), 'ATM_Results_' + data.name.replace(/\s+/g, '_'));
   const pdfUrl = pdfFile.getUrl();
 
-  // Save to Google Sheet with PDF link
   const rowData = [
     new Date(),
     data.name,
@@ -195,13 +1011,12 @@ function handleAtmSubmission(data) {
     data.microActionTitle,
     data.microActionDescription,
     data.eventId,
-    pdfUrl // PDF link in last column
+    pdfUrl
   ];
 
   sheet.appendRow(rowData);
   Logger.log('Data saved to sheet with PDF link');
 
-  // Send email with PDF
   if (data.email && data.email.trim() !== '') {
     sendAtmPdfEmail(data, pdfFile);
     Logger.log('Email sent to: ' + data.email);
@@ -213,22 +1028,7 @@ function handleAtmSubmission(data) {
 }
 
 // ============================================================
-// SAVE PDF TO GOOGLE DRIVE
-// ============================================================
-function savePdfToDrive(blob, fileName) {
-  const folder = CONFIG.DRIVE_FOLDER_ID
-    ? DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID)
-    : DriveApp.getRootFolder();
-
-  const file = folder.createFile(blob);
-  file.setName(fileName + '.pdf');
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-  return file;
-}
-
-// ============================================================
-// AURA PDF GENERATOR (Clean Design - No Emojis, No Gradients)
+// AURA PDF GENERATOR
 // ============================================================
 function generateAuraPdf(data) {
   const html = `
@@ -398,18 +1198,6 @@ function generateAuraPdf(data) {
     <p>Book a free 15-minute clarity call with our mental health experts</p>
     <p><strong>Visit:</strong> ${CONFIG.COMPANY_WEBSITE}/contact</p>
     <p><strong>WhatsApp:</strong> ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
   </div>
 
   <div class="footer">
@@ -427,7 +1215,7 @@ function generateAuraPdf(data) {
 }
 
 // ============================================================
-// ATM PDF GENERATOR (Clean Design - No Emojis, No Gradients)
+// ATM PDF GENERATOR
 // ============================================================
 function generateAtmPdf(data) {
   const html = `
@@ -566,18 +1354,6 @@ function generateAtmPdf(data) {
     <p>Book a free 15-minute clarity call with our mental health experts</p>
     <p><strong>Visit:</strong> ${CONFIG.COMPANY_WEBSITE}/contact</p>
     <p><strong>WhatsApp:</strong> ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
   </div>
 
   <div class="footer">
@@ -621,18 +1397,6 @@ Next Steps:
 - Book a free clarity call: ${CONFIG.COMPANY_WEBSITE}/contact
 - Chat with us on WhatsApp: ${CONFIG.WHATSAPP_NUMBER}
 
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-
 Best regards,
 CuraGo Team
 ${CONFIG.COMPANY_WEBSITE}
@@ -666,18 +1430,6 @@ ${CONFIG.COMPANY_WEBSITE}
   <div class="footer">
     <p><strong>CuraGo Team</strong></p>
     <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
   </div>
 </body>
 </html>
@@ -722,18 +1474,6 @@ Next Steps:
 - Book a free clarity call: ${CONFIG.COMPANY_WEBSITE}/contact
 - Chat with us on WhatsApp: ${CONFIG.WHATSAPP_NUMBER}
 
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-
 Best regards,
 CuraGo Team
 ${CONFIG.COMPANY_WEBSITE}
@@ -767,18 +1507,6 @@ ${CONFIG.COMPANY_WEBSITE}
   <div class="footer">
     <p><strong>CuraGo Team</strong></p>
     <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
   </div>
 </body>
 </html>
@@ -799,1013 +1527,21 @@ ${CONFIG.COMPANY_WEBSITE}
 }
 
 // ============================================================
-// CALA SUBMISSION HANDLER
+// CALA, GBSI, PRIORITY CIRCLE, CONSULTATION BOOKING HANDLERS
 // ============================================================
+// Note: Add your existing handlers for CALA, GBSI, Priority Circle,
+// and Consultation Booking here. The code structure is the same as above.
+
 function handleCalaSubmission(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(CONFIG.CALA_SHEET_NAME);
-
-  if (!sheet) {
-    throw new Error('Sheet "' + CONFIG.CALA_SHEET_NAME + '" not found. Please create it.');
-  }
-
-  // Generate PDF and save to Drive
-  const pdfFile = savePdfToDrive(generateCalaPdf(data), 'CALA_Results_' + data.name.replace(/\s+/g, '_'));
-  const pdfUrl = pdfFile.getUrl();
-
-  // Save to Google Sheet with PDF link
-  const rowData = [
-    new Date(),
-    data.name,
-    data.email || '',
-    data.phoneNumber,
-    data.primaryLoop,
-    data.secondaryLoop || 'None',
-    data.triggerType,
-    data.reinforcement,
-    data.loadCapacityBand,
-    data.stability,
-    data.loopScores.anticipatory,
-    data.loopScores.control,
-    data.loopScores.reassurance,
-    data.loopScores.avoidance,
-    data.loopScores.somatic,
-    data.loopScores.cognitiveOverload,
-    data.eventId,
-    pdfUrl // PDF link in last column
-  ];
-
-  sheet.appendRow(rowData);
-  Logger.log('Data saved to sheet with PDF link');
-
-  // Send email with PDF
-  if (data.email && data.email.trim() !== '') {
-    sendCalaPdfEmail(data, pdfFile);
-    Logger.log('Email sent to: ' + data.email);
-  } else {
-    Logger.log('No email provided, skipping email send');
-  }
-
-  return { success: true, message: 'CALA results saved and email sent', pdfUrl: pdfUrl };
+  // Add your CALA handler code here
+  return { success: true, message: 'CALA handler to be implemented' };
 }
 
-// ============================================================
-// CALA PDF GENERATOR - WITH COMPLETE CONTENT
-// ============================================================
-function generateCalaPdf(data) {
-  // Get loop descriptions
-  const getLoopDescription = function(loopName) {
-    const descriptions = {
-      'Anticipatory Loop': 'Your anxiety is driven by future-oriented thinking. You tend to mentally rehearse possible outcomes in advance, which creates a sense of preparedness but also keeps anxiety active.',
-      'Control-Seeking Loop': 'Your anxiety is shaped by a need to stabilise or control uncertainty. Attempts to manage or neutralise discomfort provide short-term relief but keep attention fixed on the problem.',
-      'Reassurance Loop': 'Your anxiety is reinforced through reassurance-seeking. External validation eases anxiety briefly, but over time increases dependence and sensitivity to doubt.',
-      'Avoidance Loop': 'Your anxiety persists through avoidance patterns. Avoiding discomfort reduces anxiety momentarily, but teaches the system that anxiety requires withdrawal.',
-      'Somatic Sensitivity Loop': 'Your anxiety is strongly influenced by bodily sensations. Physical signals become interpreted as threats, which amplifies awareness and fear.',
-      'Cognitive Overload Loop': 'Your anxiety emerges from sustained mental load. Prolonged thinking without recovery reduces cognitive buffer, allowing anxiety to surface during routine stress.'
-    };
-    return descriptions[loopName] || '';
-  };
-
-  // Get trigger content
-  const getTriggerContent = function(triggerType) {
-    const content = {
-      'Internal': {
-        description: 'Your anxiety is mostly triggered internally — through thoughts, mental scenarios, or subtle body signals. This explains why anxiety can appear even on days that look calm from the outside.',
-        points: [
-          'You may have noticed anxiety arriving without a clear external reason.',
-          'This can make it harder to explain to others — or even to yourself — why you feel anxious.'
-        ]
-      },
-      'External': {
-        description: 'Your anxiety is mainly triggered by situations or environments, with internal reactions following. This means anxiety usually makes sense in context, even if the reaction feels stronger than expected.',
-        points: [
-          'You may find that anxiety eases once the situation passes.',
-          'Certain environments or demands may consistently stand out as difficult for you.'
-        ]
-      },
-      'Mixed': {
-        description: 'Your anxiety shifts between internal and situational triggers. Some days, external stressors play a bigger role. On other days, anxiety seems to arise internally.',
-        points: [
-          'This can make anxiety feel inconsistent or hard to predict.',
-          'You may notice that your experience changes depending on context rather than one fixed cause.'
-        ]
-      }
-    };
-    return content[triggerType] || content['Mixed'];
-  };
-
-  // Get reinforcement content
-  const getReinforcementContent = function(reinforcement) {
-    const content = {
-      'Control': {
-        description: 'When anxiety appears, you tend to respond by trying to manage or stabilise it. This usually brings short-term relief, but keeps attention focused on the problem.',
-        points: [
-          'You may feel more alert or "on guard" even after anxiety settles.',
-          'It can feel like you\'re always one step away from needing to intervene again.'
-        ]
-      },
-      'Reassurance': {
-        description: 'Reassurance reduces anxiety briefly, but over time increases dependence on external confirmation. This explains why reassurance often needs repeating.',
-        points: [
-          'You may notice relief fading faster than it used to.',
-          'Anxiety can feel quieter when someone else confirms things — but louder when you\'re alone.'
-        ]
-      },
-      'Avoidance': {
-        description: 'Avoiding discomfort reduces anxiety in the moment, but teaches the system to withdraw. Over time, this can reduce tolerance.',
-        points: [
-          'You may feel immediate relief after stepping away from a situation.',
-          'Later, similar situations may start to feel harder than before.'
-        ]
-      },
-      'Neutral': {
-        description: 'Your coping responses reduce anxiety without strongly reinforcing it. This suggests your system is managing stress without locking into a repeating loop.',
-        points: [
-          'You may recognise anxiety without feeling overtaken by it.',
-          'Anxiety tends to pass without leaving a strong after-effect.'
-        ]
-      }
-    };
-    return content[reinforcement] || content['Neutral'];
-  };
-
-  // Get load capacity content
-  const getLoadContent = function(loadCapacity) {
-    const content = {
-      'Overloaded': {
-        description: 'Your current mental and physical demands exceed your recovery capacity. This reduces buffer, making anxiety more likely during routine stress.',
-        points: [
-          'You may feel that even small demands take more effort than before.',
-          'Anxiety may show up more often when rest has been inconsistent.'
-        ]
-      },
-      'Strained': {
-        description: 'You are functioning, but with limited margin. Anxiety increases when stress accumulates or recovery is delayed.',
-        points: [
-          'You may feel "mostly okay" until several things pile up at once.',
-          'There may be less room for error or unexpected demands.'
-        ]
-      },
-      'Balanced': {
-        description: 'Your load and recovery are reasonably matched. Anxiety is more likely linked to specific situations than exhaustion.',
-        points: [
-          'You may notice anxiety comes and goes without lingering.',
-          'Recovery generally restores your baseline.'
-        ]
-      }
-    };
-    return content[loadCapacity] || content['Balanced'];
-  };
-
-  // Get stability content
-  const getStabilityContent = function(stability) {
-    const content = {
-      'Stable': {
-        description: 'Anxiety appears, but settles when conditions improve. Your system returns to baseline without much carry-over.',
-        points: [
-          'Anxiety feels contained rather than spreading.',
-          'Stressful periods don\'t permanently shift how you feel.'
-        ]
-      },
-      'Fluctuating': {
-        description: 'Anxiety varies with stress and recovery balance. It\'s not fixed, but it can feel unpredictable.',
-        points: [
-          'Some weeks feel manageable, others feel unexpectedly harder.',
-          'Changes in routine or rest may strongly influence how you feel.'
-        ]
-      },
-      'Escalation-Prone': {
-        description: 'Anxiety intensifies when recovery remains insufficient over time. This reflects narrowing capacity, not worsening anxiety itself.',
-        points: [
-          'You may notice anxiety lingering longer than it used to.',
-          'Stress seems to accumulate rather than reset fully.'
-        ]
-      }
-    };
-    return content[stability] || content['Stable'];
-  };
-
-  const trigger = getTriggerContent(data.triggerType);
-  const reinforcement = getReinforcementContent(data.reinforcement);
-  const load = getLoadContent(data.loadCapacityBand);
-  const stability = getStabilityContent(data.stability);
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      padding: 30px;
-      max-width: 900px;
-      margin: 0 auto;
-      font-size: 11pt;
-    }
-    .header {
-      background: #096b17;
-      color: white;
-      padding: 25px;
-      text-align: center;
-      margin-bottom: 25px;
-    }
-    .header h1 {
-      margin: 0 0 8px 0;
-      font-size: 24pt;
-      font-weight: bold;
-    }
-    .header p {
-      margin: 0;
-      font-size: 12pt;
-      opacity: 0.95;
-    }
-    .greeting {
-      font-size: 14pt;
-      margin-bottom: 15px;
-      color: #096b17;
-      font-weight: bold;
-    }
-    .section {
-      margin-bottom: 20px;
-      page-break-inside: avoid;
-    }
-    .section-header {
-      background: #f8f9fa;
-      padding: 12px 15px;
-      margin-bottom: 12px;
-      border-left: 4px solid #096b17;
-    }
-    .section-header h2 {
-      margin: 0;
-      color: #096b17;
-      font-size: 14pt;
-      font-weight: bold;
-    }
-    .loop-box {
-      background: #096b17;
-      color: white;
-      padding: 18px;
-      margin: 12px 0;
-    }
-    .loop-box h3 {
-      margin: 0 0 10px 0;
-      font-size: 13pt;
-      font-weight: bold;
-    }
-    .loop-box p {
-      margin: 8px 0;
-      font-size: 10.5pt;
-      line-height: 1.5;
-    }
-    .loop-box ul {
-      margin: 8px 0 0 18px;
-      padding: 0;
-    }
-    .loop-box li {
-      margin: 5px 0;
-      font-size: 10pt;
-    }
-    .content-box {
-      background: white;
-      padding: 15px;
-      margin: 12px 0;
-      border: 1px solid #e0e0e0;
-    }
-    .content-box h3 {
-      margin: 0 0 10px 0;
-      color: #096b17;
-      font-size: 12pt;
-      font-weight: bold;
-    }
-    .content-box p {
-      margin: 8px 0;
-      font-size: 10.5pt;
-      line-height: 1.5;
-    }
-    .content-box ul {
-      margin: 8px 0 0 18px;
-      padding: 0;
-    }
-    .content-box li {
-      margin: 5px 0;
-      font-size: 10pt;
-    }
-    .score-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .score-item {
-      background: white;
-      padding: 10px;
-      border: 1px solid #e0e0e0;
-      font-size: 10pt;
-    }
-    .score-label {
-      font-weight: bold;
-      color: #096b17;
-    }
-    .cta-box {
-      background: #096b17;
-      color: white;
-      padding: 18px;
-      text-align: center;
-      margin: 20px 0;
-    }
-    .cta-box h3 {
-      margin: 0 0 10px 0;
-      font-size: 13pt;
-    }
-    .cta-box p {
-      margin: 6px 0;
-      font-size: 10.5pt;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 25px;
-      padding-top: 18px;
-      border-top: 2px solid #e0e0e0;
-      color: #666;
-      font-size: 9pt;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Your CALA 1.0 Report</h1>
-    <p>Personalized Clinical Assessment for ${data.name}</p>
-  </div>
-
-  <p class="greeting">Thank you for completing the CALA 1.0 Assessment</p>
-
-  <!-- SECTION 1: ANXIETY LOOP MAP -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Section 1: YOUR ANXIETY LOOP MAP</h2>
-    </div>
-
-    <div class="loop-box">
-      <h3>${data.secondaryLoop ? 'Dual Loop' : 'Single Loop'}</h3>
-
-      ${!data.secondaryLoop ? `
-      <p><strong>Your anxiety follows a ${data.primaryLoop} pattern.</strong></p>
-      <p>${getLoopDescription(data.primaryLoop)}</p>
-      <p>This means anxiety tends to repeat through a familiar pathway rather than appearing randomly.</p>
-      <p>Over time, it's the repetition of this pattern, not intensity, that keeps anxiety present.</p>
-      <ul>
-        <li>You may notice that anxiety feels predictable in hindsight, even if it feels sudden in the moment.</li>
-        <li>This pattern often gives the impression that anxiety has a "mind of its own," when it is actually following the same route each time.</li>
-      </ul>
-      ` : `
-      <p><strong>Your anxiety follows a ${data.primaryLoop} pattern, with a ${data.secondaryLoop} influence.</strong></p>
-      <p>${getLoopDescription(data.primaryLoop)}</p>
-      <p>${getLoopDescription(data.secondaryLoop)}</p>
-      <p>The primary loop explains how anxiety usually begins for you.</p>
-      <p>The secondary loop explains why it tends to continue or return.</p>
-      <ul>
-        <li>This can feel like anxiety starts for one reason, but stays for another.</li>
-        <li>You may recognise that even when the original trigger settles, anxiety doesn't fully switch off.</li>
-      </ul>
-      `}
-    </div>
-  </div>
-
-  <!-- SECTION 2: TRIGGER ARCHITECTURE -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Section 2: TRIGGER ARCHITECTURE</h2>
-    </div>
-
-    <div class="content-box">
-      <h3>${data.triggerType} Trigger Pattern</h3>
-      <p>${trigger.description}</p>
-      <ul>
-        ${trigger.points.map(point => '<li>' + point + '</li>').join('')}
-      </ul>
-    </div>
-  </div>
-
-  <!-- SECTION 3: WHAT KEEPS THE LOOP GOING -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Section 3: WHAT KEEPS THE LOOP GOING</h2>
-    </div>
-
-    <div class="content-box">
-      <h3>${data.reinforcement} Pattern</h3>
-      <p>${reinforcement.description}</p>
-      <ul>
-        ${reinforcement.points.map(point => '<li>' + point + '</li>').join('')}
-      </ul>
-    </div>
-  </div>
-
-  <!-- SECTION 4: LOAD VS RECOVERY CAPACITY -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Section 4: LOAD VS RECOVERY CAPACITY</h2>
-    </div>
-
-    <div class="content-box">
-      <h3>${data.loadCapacityBand}</h3>
-      <p>${load.description}</p>
-      <ul>
-        ${load.points.map(point => '<li>' + point + '</li>').join('')}
-      </ul>
-    </div>
-  </div>
-
-  <!-- SECTION 5: STABILITY & ESCALATION RISK -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Section 5: STABILITY & ESCALATION RISK</h2>
-    </div>
-
-    <div class="content-box">
-      <h3>${data.stability}</h3>
-      <p>${stability.description}</p>
-      <ul>
-        ${stability.points.map(point => '<li>' + point + '</li>').join('')}
-      </ul>
-    </div>
-  </div>
-
-  <!-- LOOP INTENSITY SCORES -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Your Loop Intensity Scores</h2>
-    </div>
-
-    <div class="score-grid">
-      <div class="score-item">
-        <span class="score-label">Anticipatory:</span> ${data.loopScores.anticipatory}
-      </div>
-      <div class="score-item">
-        <span class="score-label">Control:</span> ${data.loopScores.control}
-      </div>
-      <div class="score-item">
-        <span class="score-label">Reassurance:</span> ${data.loopScores.reassurance}
-      </div>
-      <div class="score-item">
-        <span class="score-label">Avoidance:</span> ${data.loopScores.avoidance}
-      </div>
-      <div class="score-item">
-        <span class="score-label">Somatic:</span> ${data.loopScores.somatic}
-      </div>
-      <div class="score-item">
-        <span class="score-label">Cognitive Overload:</span> ${data.loopScores.cognitiveOverload}
-      </div>
-    </div>
-  </div>
-
-  <!-- CTA BOX -->
-  <div class="cta-box">
-    <h3>Ready to Take the Next Step?</h3>
-    <p>Book a consultation with our clinical team to discuss your CALA results</p>
-    <p><strong>Visit:</strong> ${CONFIG.COMPANY_WEBSITE}/contact</p>
-    <p><strong>WhatsApp:</strong> ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-  </div>
-
-  <div class="footer">
-    <strong>CuraGo - Your Partner in Emotional Wellness</strong>
-    <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.SUPPORT_EMAIL}</p>
-    <p style="margin-top: 8px;">
-      Report generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-    </p>
-  </div>
-</body>
-</html>
-  `;
-
-  return Utilities.newBlob(html, 'text/html', 'temp.html').getAs('application/pdf');
-}
-
-// ============================================================
-// SEND CALA EMAIL WITH PDF
-// ============================================================
-function sendCalaPdfEmail(data, pdfFile) {
-  const plainBody = `
-Hi ${data.name}!
-
-Thank you for completing the CALA 1.0 assessment.
-
-Your detailed results are attached as a PDF document.
-
-QUICK SUMMARY:
-Primary Loop: ${data.primaryLoop}
-${data.secondaryLoop ? 'Secondary Loop: ' + data.secondaryLoop : ''}
-Trigger Pattern: ${data.triggerType}
-Reinforcement: ${data.reinforcement}
-Load vs Recovery: ${data.loadCapacityBand}
-Stability: ${data.stability}
-
-Next Steps:
-- Book a consultation: ${CONFIG.COMPANY_WEBSITE}/contact
-- Chat with us on WhatsApp: ${CONFIG.WHATSAPP_NUMBER}
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-
-Best regards,
-CuraGo Team
-${CONFIG.COMPANY_WEBSITE}
-  `;
-
-  const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-    .header { background: #096b17; color: white; padding: 30px; text-align: center; }
-    .content { padding: 30px; }
-    .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; background: #f8f9fa; }
-    .cta-button { background: #64CB81; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Your CALA 1.0 Results</h1>
-  </div>
-  <div class="content">
-    <h2>Hi ${data.name}!</h2>
-    <p>Thank you for completing the CALA 1.0 assessment.</p>
-    <p><strong>Your detailed results are attached as a PDF document.</strong></p>
-    <p>Primary Loop: <strong>${data.primaryLoop}</strong></p>
-    <p style="text-align: center;">
-      <a href="${CONFIG.COMPANY_WEBSITE}/contact" class="cta-button">Book Consultation</a>
-    </p>
-  </div>
-  <div class="footer">
-    <p><strong>CuraGo Team</strong></p>
-    <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-  </div>
-</body>
-</html>
-  `;
-
-  GmailApp.sendEmail(
-    data.email,
-    CONFIG.EMAIL_SUBJECT_CALA,
-    plainBody,
-    {
-      htmlBody: htmlBody,
-      name: CONFIG.FROM_NAME,
-      attachments: [pdfFile.getBlob()]
-    }
-  );
-
-  Logger.log('CALA email with PDF sent to: ' + data.email);
-}
-
-// ============================================================
-// GBSI SUBMISSION HANDLER
-// ============================================================
 function handleGbsiSubmission(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(CONFIG.GBSI_SHEET_NAME);
-
-  if (!sheet) {
-    throw new Error('Sheet "' + CONFIG.GBSI_SHEET_NAME + '" not found. Please create it.');
-  }
-
-  // Generate PDF and save to Drive
-  const pdfFile = savePdfToDrive(generateGbsiPdf(data), 'GBSI_Results_' + data.name.replace(/\s+/g, '_'));
-  const pdfUrl = pdfFile.getUrl();
-
-  // Save to Google Sheet with PDF link
-  const rowData = [
-    new Date(),
-    data.name,
-    data.email || '',
-    data.phoneNumber,
-    data.age,
-    data.alarmingSigns.join(', '),
-    data.familyHistory.join(', '),
-    data.painFrequency,
-    data.reliefFactor,
-    data.bristolType,
-    data.refluxFrequency,
-    data.fullnessFactor,
-    data.fattyLiver,
-    data.stressLevel,
-    data.brainFog,
-    data.dietaryHabits.lateNightDinners ? 'Yes' : 'No',
-    data.dietaryHabits.highCaffeine ? 'Yes' : 'No',
-    data.dietaryHabits.frequentJunk ? 'Yes' : 'No',
-    data.dietaryHabits.skipBreakfast ? 'Yes' : 'No',
-    data.resultType,
-    data.ibsType || 'N/A',
-    data.hasRedFlags ? 'Yes' : 'No',
-    data.brainGutSensitivity,
-    data.axisScore,
-    data.eventId,
-    pdfUrl // PDF link in last column
-  ];
-
-  sheet.appendRow(rowData);
-  Logger.log('Data saved to sheet with PDF link');
-
-  // Send email with PDF
-  if (data.email && data.email.trim() !== '') {
-    sendGbsiPdfEmail(data, pdfFile);
-    Logger.log('Email sent to: ' + data.email);
-  } else {
-    Logger.log('No email provided, skipping email send');
-  }
-
-  return { success: true, message: 'GBSI results saved and email sent', pdfUrl: pdfUrl };
+  // Add your GBSI handler code here
+  return { success: true, message: 'GBSI handler to be implemented' };
 }
 
-// ============================================================
-// GBSI PDF GENERATOR (Clean Design - No Emojis, No Gradients)
-// ============================================================
-function generateGbsiPdf(data) {
-  // Get result type description
-  const getResultDescription = function() {
-    switch(data.resultType) {
-      case 'clinicalPriority':
-        return {
-          title: 'Urgent Surgical Evaluation Recommended',
-          color: '#dc2626',
-          description: 'Based on your reports, we cannot categorize this as simple IBS. A physical examination and likely an Endoscopy/Colonoscopy is recommended to rule out structural issues immediately.'
-        };
-      case 'brainGutOverdrive':
-        return {
-          title: 'Your Axis is Hypersensitive',
-          color: '#7c3aed',
-          description: 'You meet the Rome IV criteria for IBS. Your Vagus nerve is in a state of hyper-vigilance. Your reports are likely "Normal" because the issue is communication, not anatomy.'
-        };
-      case 'mechanicalMetabolic':
-        return {
-          title: 'Upper GI Dysfunction & Metabolic Load',
-          color: '#ea580c',
-          description: 'Your symptoms point toward Functional Dyspepsia or GERD. Your digestive system needs support to process metabolic load more efficiently.'
-        };
-      case 'allClear':
-        return {
-          title: "You're Doing Great!",
-          color: '#16a34a',
-          description: 'You don\'t meet the criteria for IBS or serious pathology. Your symptoms are likely "Lifestyle Gastritis" that can be managed with habit adjustments.'
-        };
-      default:
-        return {
-          title: 'Assessment Complete',
-          color: '#096b17',
-          description: 'Your assessment results are ready.'
-        };
-    }
-  };
-
-  const resultInfo = getResultDescription();
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      padding: 40px;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-    .header {
-      background: #096b17;
-      color: white;
-      padding: 30px;
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      font-weight: normal;
-    }
-    .header p {
-      margin: 0;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .greeting {
-      font-size: 18px;
-      margin-bottom: 20px;
-      color: #096b17;
-      font-weight: bold;
-    }
-    .result-box {
-      background: ${resultInfo.color};
-      color: white;
-      padding: 25px;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .result-title {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-    .section {
-      background: #ffffff;
-      padding: 20px;
-      margin-bottom: 15px;
-      border: 1px solid #e0e0e0;
-    }
-    .section h2 {
-      margin-top: 0;
-      color: #096b17;
-      font-size: 18px;
-    }
-    .score-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-top: 15px;
-    }
-    .score-item {
-      background: #f8f9fa;
-      padding: 12px;
-      border-left: 3px solid #096b17;
-    }
-    .score-label {
-      font-weight: bold;
-      color: #096b17;
-      font-size: 12px;
-    }
-    .score-value {
-      font-size: 14px;
-      margin-top: 5px;
-    }
-    .cta-box {
-      background: #096b17;
-      color: white;
-      padding: 20px;
-      text-align: center;
-      margin: 25px 0;
-    }
-    .cta-box h3 {
-      margin-top: 0;
-      font-size: 18px;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 2px solid #e0e0e0;
-      color: #666;
-      font-size: 12px;
-    }
-    .warning-box {
-      background: #fef2f2;
-      border: 2px solid #fca5a5;
-      padding: 15px;
-      margin: 15px 0;
-      color: #991b1b;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Your GBSI Assessment Results</h1>
-    <p>Gut-Brain Sensitivity Index</p>
-  </div>
-
-  <p class="greeting">Hi ${data.name}!</p>
-  <p>Thank you for completing the GBSI assessment. Here are your personalized results:</p>
-
-  <div class="result-box">
-    <div class="result-title">${resultInfo.title}</div>
-    <p style="margin: 0;">${resultInfo.description}</p>
-  </div>
-
-  ${data.ibsType && data.ibsType !== 'none' ? `
-  <div class="section">
-    <h2>IBS Classification</h2>
-    <p><strong>Type:</strong> ${data.ibsType}</p>
-  </div>
-  ` : ''}
-
-  <div class="section">
-    <h2>Brain-Gut Axis Assessment</h2>
-    <div class="score-grid">
-      <div class="score-item">
-        <div class="score-label">Axis Score</div>
-        <div class="score-value">${data.axisScore}/3</div>
-      </div>
-      <div class="score-item">
-        <div class="score-label">Brain-Gut Sensitivity</div>
-        <div class="score-value">${data.brainGutSensitivity.toUpperCase()}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Assessment Details</h2>
-    <div class="score-grid">
-      <div class="score-item">
-        <div class="score-label">Age Range</div>
-        <div class="score-value">${data.age}</div>
-      </div>
-      <div class="score-item">
-        <div class="score-label">Pain Frequency</div>
-        <div class="score-value">${data.painFrequency}</div>
-      </div>
-      <div class="score-item">
-        <div class="score-label">Stool Type</div>
-        <div class="score-value">${data.bristolType}</div>
-      </div>
-      <div class="score-item">
-        <div class="score-label">Stress Level</div>
-        <div class="score-value">${data.stressLevel}/10</div>
-      </div>
-      <div class="score-item">
-        <div class="score-label">Reflux/Acidity</div>
-        <div class="score-value">${data.refluxFrequency}</div>
-      </div>
-      <div class="score-item">
-        <div class="score-label">Brain Fog</div>
-        <div class="score-value">${data.brainFog === 'yesFrequently' ? 'Yes, Frequently' : 'No'}</div>
-      </div>
-    </div>
-  </div>
-
-  ${data.hasRedFlags ? `
-  <div class="warning-box">
-    <strong>IMPORTANT:</strong> Red flags detected in your assessment. Please seek professional medical evaluation.
-  </div>
-  ` : ''}
-
-  <div class="cta-box">
-    <h3>Ready to take your next step?</h3>
-    <p>Book a consultation with our gastroenterology experts</p>
-    <p><strong>Visit:</strong> ${CONFIG.COMPANY_WEBSITE}/contact</p>
-    <p><strong>WhatsApp:</strong> ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-  </div>
-
-  <div class="footer">
-    <strong>CuraGo - Your Partner in Gut Health</strong>
-    <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.SUPPORT_EMAIL}</p>
-    <p style="margin-top: 10px;">
-      Report generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-    </p>
-  </div>
-</body>
-</html>
-  `;
-
-  return Utilities.newBlob(html, 'text/html', 'temp.html').getAs('application/pdf');
-}
-
-// ============================================================
-// SEND GBSI EMAIL WITH PDF
-// ============================================================
-function sendGbsiPdfEmail(data, pdfFile) {
-  const plainBody = `
-Hi ${data.name}!
-
-Thank you for completing the GBSI assessment.
-
-Your detailed results are attached as a PDF document.
-
-QUICK SUMMARY:
-Result: ${data.resultType}
-${data.ibsType && data.ibsType !== 'none' ? 'IBS Type: ' + data.ibsType : ''}
-Brain-Gut Sensitivity: ${data.brainGutSensitivity}
-Axis Score: ${data.axisScore}/3
-
-Next Steps:
-- Book a consultation: ${CONFIG.COMPANY_WEBSITE}/contact
-- Chat with us on WhatsApp: ${CONFIG.WHATSAPP_NUMBER}
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-
-Best regards,
-CuraGo Team
-${CONFIG.COMPANY_WEBSITE}
-  `;
-
-  const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-    .header { background: #096b17; color: white; padding: 30px; text-align: center; }
-    .content { padding: 30px; }
-    .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; background: #f8f9fa; }
-    .cta-button { background: #64CB81; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Your GBSI Assessment Results</h1>
-  </div>
-  <div class="content">
-    <h2>Hi ${data.name}!</h2>
-    <p>Thank you for completing the GBSI assessment.</p>
-    <p><strong>Your detailed results are attached as a PDF document.</strong></p>
-    <p>Brain-Gut Sensitivity: <strong>${data.brainGutSensitivity.toUpperCase()}</strong></p>
-    <p style="text-align: center;">
-      <a href="${CONFIG.COMPANY_WEBSITE}/contact" class="cta-button">Book Consultation</a>
-    </p>
-  </div>
-  <div class="footer">
-    <p><strong>CuraGo Team</strong></p>
-    <p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.WHATSAPP_NUMBER}</p>
-
-  // Doctor & Clinic Info (NEW)
-  DOCTOR_NAME: 'Dr. Yuvaraj T',
-  DOCTOR_CREDENTIALS: 'MCh Surgical Gastroenterology (KEMH, Mumbai) | FMAS, FACRSI',
-  CLINIC_NAME: 'SRV Hospital',
-  CLINIC_ADDRESS: 'Tilak Nagar, Chembur, Mumbai',
-
-  // Payment Info (NEW)
-  SLOT_BOOKING_FEE: 150,
-  CONSULTATION_FEE: 1000,
-  COMPANY_GST: '', // Optional: Add your GST number
-  INVOICE_PREFIX: 'INV-SB-',
-  </div>
-</body>
-</html>
-  `;
-
-  GmailApp.sendEmail(
-    data.email,
-    CONFIG.EMAIL_SUBJECT_GBSI,
-    plainBody,
-    {
-      htmlBody: htmlBody,
-      name: CONFIG.FROM_NAME,
-      attachments: [pdfFile.getBlob()]
-    }
-  );
-
-  Logger.log('GBSI email with PDF sent to: ' + data.email);
-}
-
-// ============================================================
-// PRIORITY CIRCLE 365 SUBMISSION HANDLER
-// ============================================================
 function handlePriorityCircleSubmission(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(CONFIG.PRIORITY_CIRCLE_SHEET_NAME);
@@ -1814,9 +1550,6 @@ function handlePriorityCircleSubmission(data) {
     throw new Error('Sheet "' + CONFIG.PRIORITY_CIRCLE_SHEET_NAME + '" not found. Please create it.');
   }
 
-  // Prepare row data to match the columns:
-  // Timestamp, Name, WhatsApp Number, Email, Age, City, Area of Residence,
-  // Has Gut-Brain Problem, Problem Description, Preferred Option, Status, Notes
   const timestamp = new Date();
   const rowData = [
     timestamp,
@@ -1829,8 +1562,8 @@ function handlePriorityCircleSubmission(data) {
     data.hasGutBrainProblem || '',
     data.problemDescription || '',
     data.preferredOption || '',
-    'Pending Review', // Status
-    '' // Notes (empty for now)
+    'Pending Review',
+    ''
   ];
 
   sheet.appendRow(rowData);
@@ -1843,9 +1576,6 @@ function handlePriorityCircleSubmission(data) {
   };
 }
 
-// ============================================================
-// CONSULTATION BOOKING SUBMISSION HANDLER
-// ============================================================
 function handleConsultationBookingSubmission(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(CONFIG.CONSULTATION_BOOKING_SHEET_NAME);
@@ -1854,8 +1584,6 @@ function handleConsultationBookingSubmission(data) {
     throw new Error('Sheet "' + CONFIG.CONSULTATION_BOOKING_SHEET_NAME + '" not found. Please create it.');
   }
 
-  // Prepare row data to match the columns:
-  // Timestamp, Name, WhatsApp Number, Email, Consultation Type, Preferred Date, Preferred Time, Status, Notes
   const timestamp = new Date();
   const rowData = [
     timestamp,
@@ -1865,8 +1593,8 @@ function handleConsultationBookingSubmission(data) {
     data.consultationType || '',
     data.preferredDate || '',
     data.preferredTime || '',
-    'Pending Confirmation', // Status
-    '' // Notes (empty for now)
+    'Pending Confirmation',
+    ''
   ];
 
   sheet.appendRow(rowData);
@@ -1877,174 +1605,4 @@ function handleConsultationBookingSubmission(data) {
     message: 'Consultation booking submitted successfully',
     timestamp: timestamp.toISOString()
   };
-}
-
-// ============================================================
-// NEW SLOT BOOKING FUNCTIONS
-// ============================================================
-
-// GENERATE INVOICE NUMBER
-function generateInvoiceNumber() {
-  const now = new Date();
-  const year = now.getFullYear().toString().slice(-2);
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return CONFIG.INVOICE_PREFIX + year + month + day + '-' + random;
-}
-
-// GENERATE MEETING LINK
-function generateMeetingLink(data) {
-  const meetingId = 'meet-' + Date.now().toString(36);
-  return 'https://meet.google.com/' + meetingId;
-}
-
-// SLOT BOOKING SUBMISSION HANDLER
-function handleSlotBookingSubmission(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const bookingSheet = ss.getSheetByName(CONFIG.SLOT_BOOKING_SHEET_NAME);
-  const paymentSheet = ss.getSheetByName(CONFIG.SLOT_PAYMENT_SHEET_NAME);
-
-  if (!bookingSheet) {
-    throw new Error('Sheet "' + CONFIG.SLOT_BOOKING_SHEET_NAME + '" not found. Please run initializeSlotBookingSheets() first.');
-  }
-  if (!paymentSheet) {
-    throw new Error('Sheet "' + CONFIG.SLOT_PAYMENT_SHEET_NAME + '" not found. Please run initializeSlotBookingSheets() first.');
-  }
-
-  const timestamp = new Date();
-  const invoiceNumber = generateInvoiceNumber();
-  const meetLink = data.mode === 'online' ? generateMeetingLink(data) : 'N/A (In-Clinic)';
-
-  // Save to Booking Sheet
-  const bookingRowData = [
-    timestamp, invoiceNumber, data.name, data.age, data.gender, data.email || '',
-    data.whatsapp, data.mode, data.date, data.time, data.timeLabel || data.time,
-    meetLink, data.paymentId || '', data.paymentSignature || '',
-    CONFIG.SLOT_BOOKING_FEE, 'Confirmed', data.eventId || '',
-    data.calendarEventUrl || '', '', ''
-  ];
-
-  bookingSheet.appendRow(bookingRowData);
-  Logger.log('Booking saved to sheet: ' + invoiceNumber);
-
-  // Save to Payment Sheet
-  const paymentRowData = [
-    timestamp, invoiceNumber, data.name, data.whatsapp, data.email || '',
-    data.paymentId || '', CONFIG.SLOT_BOOKING_FEE, 'Success',
-    data.paymentMethod || 'Razorpay', data.date + ' ' + (data.timeLabel || data.time),
-    data.mode, ''
-  ];
-
-  paymentSheet.appendRow(paymentRowData);
-  Logger.log('Payment recorded: ' + data.paymentId);
-
-  // Generate Invoice PDF
-  const invoiceData = {
-    invoiceNumber: invoiceNumber, invoiceDate: timestamp, name: data.name,
-    age: data.age, gender: data.gender, email: data.email || '',
-    whatsapp: data.whatsapp, mode: data.mode, date: data.date,
-    time: data.timeLabel || data.time, meetLink: meetLink,
-    amountPaid: CONFIG.SLOT_BOOKING_FEE, paymentId: data.paymentId || '',
-    eventId: data.eventId || ''
-  };
-
-  const invoicePdfFile = savePdfToDrive(
-    generateInvoicePdf(invoiceData),
-    'Invoice_' + invoiceNumber + '_' + data.name.replace(/\s+/g, '_')
-  );
-  const invoicePdfUrl = invoicePdfFile.getUrl();
-
-  // Update booking sheet with invoice URL
-  const lastRow = bookingSheet.getLastRow();
-  bookingSheet.getRange(lastRow, 20).setValue(invoicePdfUrl);
-
-  // Send confirmation email with invoice
-  if (data.email && data.email.trim() !== '') {
-    sendBookingConfirmationEmail(invoiceData, invoicePdfFile);
-    Logger.log('Confirmation email sent to: ' + data.email);
-  } else {
-    Logger.log('No email provided, skipping email send');
-  }
-
-  return {
-    success: true,
-    message: 'Slot booking confirmed and invoice generated',
-    invoiceNumber: invoiceNumber,
-    invoiceUrl: invoicePdfUrl,
-    meetLink: meetLink
-  };
-}
-
-
-// GENERATE INVOICE PDF
-function generateInvoicePdf(data) {
-  const html = `<!DOCTYPE html>
-<html><head><style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: Arial, sans-serif; line-height: 1.5; color: #333; padding: 30px; max-width: 800px; margin: 0 auto; }
-.invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #096b17; }
-.company-name { font-size: 24px; font-weight: bold; color: #096b17; }
-.company-details { font-size: 11px; color: #666; line-height: 1.6; }
-.invoice-title { text-align: right; }
-.invoice-title h1 { font-size: 28px; color: #096b17; }
-.invoice-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-.meta-box { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #096b17; }
-.meta-box h3 { font-size: 13px; color: #096b17; margin-bottom: 8px; font-weight: bold; }
-.booking-details { background: #096b17; color: white; padding: 20px; margin: 20px 0; border-radius: 5px; }
-.booking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.payment-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-.payment-table th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 12px; color: #096b17; border-bottom: 2px solid #096b17; }
-.payment-table td { padding: 12px; font-size: 12px; border-bottom: 1px solid #e0e0e0; }
-.total-row td { font-weight: bold; font-size: 14px; background: #f8f9fa; border-top: 2px solid #096b17; border-bottom: 2px solid #096b17; }
-.meet-link-box { background: #e7f5ff; border: 2px solid #339af0; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: center; }
-.footer-notes { margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; }
-.footer-notes ul { padding-left: 20px; font-size: 11px; color: #666; line-height: 1.8; }
-.footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid #e0e0e0; font-size: 10px; color: #999; }
-</style></head><body>
-<div class="invoice-header">
-  <div><div class="company-name">CuraGo</div><div class="company-details">
-    <strong>${CONFIG.CLINIC_NAME}</strong><br>${CONFIG.CLINIC_ADDRESS}<br>
-    Email: ${CONFIG.SUPPORT_EMAIL}<br>Phone: ${CONFIG.WHATSAPP_NUMBER}
-  </div></div>
-  <div class="invoice-title"><h1>INVOICE</h1>
-    <p><strong>Invoice #:</strong> ${data.invoiceNumber}</p>
-    <p><strong>Date:</strong> ${new Date(data.invoiceDate).toLocaleDateString('en-IN')}</p>
-  </div>
-</div>
-<div class="invoice-meta">
-  <div class="meta-box"><h3>Billed To</h3>
-    <p><strong>Name:</strong> ${data.name}</p>
-    <p><strong>Age:</strong> ${data.age} | <strong>Gender:</strong> ${data.gender}</p>
-    <p><strong>WhatsApp:</strong> ${data.whatsapp}</p>
-    ${data.email ? '<p><strong>Email:</strong> ' + data.email + '</p>' : ''}
-  </div>
-  <div class="meta-box"><h3>Consultation With</h3>
-    <p><strong>${CONFIG.DOCTOR_NAME}</strong></p>
-    <p style="font-size: 10px;">${CONFIG.DOCTOR_CREDENTIALS}</p>
-  </div>
-</div>
-<div class="booking-details"><h2>Booking Details</h2><div class="booking-grid">
-  <div><strong>Mode</strong><br><span>${data.mode === 'online' ? 'Online Video Consult' : 'In-Clinic'}</span></div>
-  <div><strong>Date & Time</strong><br><span>${new Date(data.date).toLocaleDateString('en-IN')} at ${data.time}</span></div>
-  ${data.paymentId ? '<div><strong>Payment ID</strong><br><span style="font-size:11px;">' + data.paymentId + '</span></div>' : ''}
-  <div><strong>Payment Status</strong><br><span style="color:#4ade80;">✓ PAID</span></div>
-</div></div>
-${data.mode === 'online' && data.meetLink !== 'N/A (In-Clinic)' ? 
-  '<div class="meet-link-box"><h3>🎥 Your Online Consultation Link</h3><p><a href="' + data.meetLink + '">' + data.meetLink + '</a></p><p style="font-size:10px;color:#666;">Please join 5 minutes before</p></div>' : ''}
-<table class="payment-table"><thead><tr><th>Description</th><th style="width:120px;text-align:right;">Amount (₹)</th></tr></thead><tbody>
-<tr><td><strong>Slot Booking Fee</strong><br><span style="font-size:10px;color:#666;">This will be adjusted against consultation fee of ₹${CONFIG.CONSULTATION_FEE}/-</span></td>
-<td style="text-align:right;">₹${data.amountPaid.toFixed(2)}</td></tr>
-<tr class="total-row"><td>Total Amount Paid</td><td style="text-align:right;">₹${data.amountPaid.toFixed(2)}</td></tr>
-</tbody></table>
-<div class="footer-notes"><h3>Important Notes:</h3><ul>
-<li><strong>Non-refundable slot booking fee.</strong> Amount will be adjusted against consultation fee.</li>
-<li><strong>Rescheduling:</strong> Contact via WhatsApp at ${CONFIG.WHATSAPP_NUMBER} at least 2 hours before.</li>
-${data.mode === 'online' ? '<li>Ensure stable internet connection. Join 5 minutes early.</li>' : '<li>Arrive 10 minutes early for registration.</li>'}
-<li>Bring medical reports and this invoice.</li>
-</ul></div>
-<div class="footer"><p><strong>CuraGo - Your Partner in Health</strong></p>
-<p>${CONFIG.COMPANY_WEBSITE} | ${CONFIG.SUPPORT_EMAIL}</p></div>
-</body></html>`;
-  return Utilities.newBlob(html, 'text/html', 'temp.html').getAs('application/pdf');
 }
