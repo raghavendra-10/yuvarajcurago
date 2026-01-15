@@ -278,7 +278,7 @@ export default function BookConsultation() {
                     fill
                     priority={index === 0}
                     sizes="100vw"
-                    className="object-cover object-center sm:object-[center_35%]"
+                    className="object-cover object-[center_30%] sm:object-[center_35%]"
                     quality={90}
                     unoptimized
                   />
@@ -390,15 +390,15 @@ export default function BookConsultation() {
             </a>
 
             {/* Consultation Information */}
-            <div className="mt-2 pt-2 border-t border-primary-100 max-w-2xl mx-auto">
+            <div className="mt-2 pt-2  border-primary-100 max-w-2xl mx-auto">
               <p className="text-xs md:text-sm text-primary-800 mb-1">
                 <span className="font-semibold">Online Consultations:</span> Available, check available slots below
               </p>
               <p className="text-xs md:text-sm text-primary-800 mb-1">
-                <span className="font-semibold">Consultation fee:</span> Rs 1000/- (Both Online and In-clinic)
+                <span className="font-semibold">Consultation fee:</span> Rs 1000/- Both Online and In-clinic
               </p>
               <p className="text-xs md:text-sm text-primary-700">
-                <span className="font-semibold">Slot Booking Fee:</span> Rs 150/- (Adjusted fully against consultation fee)
+                <span className="font-semibold">Slot Booking Fee:</span> Rs 150/- Adjusted against consultation fee
               </p>
             </div>
           </div>

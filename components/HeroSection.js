@@ -16,7 +16,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative bg-white overflow-hidden">
+    <section className="relative bg-white overflow-hidden pt-20">
       <div className="relative z-10 w-full">
         <div className="animate-fade-in">
           {/* Desktop Image */}
