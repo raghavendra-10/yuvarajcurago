@@ -10,6 +10,15 @@ const SlotSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  activeOnline: {
+    type: Boolean,
+    default: true,
+  },
+  activeInClinic: {
+    type: Boolean,
+    default: true,
+  },
+  // Keep old 'active' field for backward compatibility during migration
   active: {
     type: Boolean,
     default: true,

@@ -24,7 +24,7 @@ export async function GET(request) {
     }
 
     // Get effective slots for this date (considering date-specific overrides and blocks)
-    const effectiveSlots = await getEffectiveSlotsForDate(date);
+    const effectiveSlots = await getEffectiveSlotsForDate(date, mode);
 
     // Get current time in IST (UTC + 5:30)
     const now = new Date();
@@ -58,14 +58,15 @@ export async function GET(request) {
       return true;
     });
 
-    // Check which slots are already booked for the given date (regardless of mode)
+    // Check which slots are already booked for the given date and mode
     const availableSlots = await Promise.all(
       filteredSlots.map(async (slot) => {
-        const booked = await isSlotBooked(date, slot.time);
+        const booked = await isSlotBooked(date, slot.time, mode);
+        const activeStatus = mode === 'online' ? slot.activeOnline : slot.activeInClinic;
         return {
           time: slot.time,
           label: slot.label,
-          active: slot.active,
+          active: activeStatus,
           available: !booked,
         };
       })

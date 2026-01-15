@@ -29,6 +29,10 @@ export default function AdminDashboard() {
   const [viewDate, setViewDate] = useState("");
   const [dateSlotsInfo, setDateSlotsInfo] = useState(null);
   const [loadingDateSlots, setLoadingDateSlots] = useState(false);
+  const [reenablingSlot, setReenablingSlot] = useState(null);
+
+  // Mode selection for viewing slots
+  const [selectedMode, setSelectedMode] = useState("online"); // 'online' or 'in-clinic'
 
   useEffect(() => {
     // Check if user is authenticated
@@ -67,7 +71,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const toggleSlotStatus = async (time, currentStatus) => {
+  const toggleSlotStatus = async (time, currentStatus, mode) => {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await fetch("/api/admin/slots", {
@@ -76,17 +80,24 @@ export default function AdminDashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ time, active: !currentStatus }),
+        body: JSON.stringify({ time, active: !currentStatus, mode }),
       });
 
       if (response.ok) {
-        showMessage("Slot status updated successfully");
+        showMessage(`Slot status updated for ${mode}`);
 
         // Update slots list in real-time
         setSlots((prevSlots) =>
-          prevSlots.map((slot) =>
-            slot.time === time ? { ...slot, active: !currentStatus } : slot
-          )
+          prevSlots.map((slot) => {
+            if (slot.time === time) {
+              if (mode === 'online') {
+                return { ...slot, activeOnline: !currentStatus };
+              } else if (mode === 'in-clinic') {
+                return { ...slot, activeInClinic: !currentStatus };
+              }
+            }
+            return slot;
+          })
         );
 
         // Refresh data in background
@@ -303,7 +314,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchDateSlots = async (date) => {
+  const fetchDateSlots = async (date, mode) => {
     if (!date) {
       showMessage("Please select a date", "error");
       return;
@@ -313,8 +324,8 @@ export default function AdminDashboard() {
     try {
       const token = localStorage.getItem("adminToken");
 
-      // Fetch available slots for this date
-      const slotsResponse = await fetch(`/api/available-slots?date=${date}`, {
+      // Fetch available slots for this date and mode
+      const slotsResponse = await fetch(`/api/available-slots?date=${date}&mode=${mode}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -324,6 +335,7 @@ export default function AdminDashboard() {
         // Organize slot information
         const slotInfo = {
           date,
+          mode,
           slots: slotsData.slots.map((slot) => ({
             time: slot.time,
             label: slot.label,
@@ -390,6 +402,50 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error toggling date slot:", error);
       showMessage("Failed to update slot", "error");
+    }
+  };
+
+  const reenableSlot = async (date, time, slotLabel, mode) => {
+    const modeText = mode === 'online' ? 'Online' : 'In-Clinic';
+    if (!confirm(`Are you sure you want to re-enable this booked slot (${slotLabel} on ${date} - ${modeText})? The existing booking will be cancelled.`)) {
+      return;
+    }
+
+    setReenablingSlot(`${date}-${time}-${mode}`);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/admin/slots", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ date, time, mode }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showMessage(`Slot ${slotLabel} on ${date} (${modeText}) has been re-enabled`);
+
+        // Update in real-time - mark slot as available
+        setDateSlotsInfo((prev) => ({
+          ...prev,
+          slots: prev.slots.map((slot) =>
+            slot.time === time ? { ...slot, booked: false, available: true } : slot
+          ),
+        }));
+
+        // Refresh bookings in background
+        fetchBookings();
+      } else {
+        showMessage(data.error || "Failed to re-enable slot", "error");
+      }
+    } catch (error) {
+      console.error("Error re-enabling slot:", error);
+      showMessage("Failed to re-enable slot", "error");
+    } finally {
+      setReenablingSlot(null);
     }
   };
 
@@ -460,6 +516,30 @@ export default function AdminDashboard() {
               </h2>
 
               <div className="space-y-4">
+                {/* Mode Selection Tabs */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setSelectedMode("online")}
+                    className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors ${
+                      selectedMode === "online"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    🌐 Online Consultations
+                  </button>
+                  <button
+                    onClick={() => setSelectedMode("in-clinic")}
+                    className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors ${
+                      selectedMode === "in-clinic"
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    🏥 In-Clinic Consultations
+                  </button>
+                </div>
+
                 {/* Date Picker */}
                 <div className="flex gap-3">
                   <input
@@ -469,7 +549,7 @@ export default function AdminDashboard() {
                     className="flex-1 px-4 py-2 border-2 border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
                   />
                   <button
-                    onClick={() => fetchDateSlots(viewDate)}
+                    onClick={() => fetchDateSlots(viewDate, selectedMode)}
                     disabled={!viewDate || loadingDateSlots}
                     className="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
                   >
@@ -491,7 +571,7 @@ export default function AdminDashboard() {
                           {dateSlotsInfo.date}
                         </h3>
                         <p className="text-sm text-primary-600">
-                          {dateSlotsInfo.slots.filter((s) => s.booked).length} booked • {dateSlotsInfo.slots.filter((s) => s.available && s.active).length} available
+                          {dateSlotsInfo.mode === 'online' ? '🌐 Online' : '🏥 In-Clinic'} • {dateSlotsInfo.slots.filter((s) => s.booked).length} booked • {dateSlotsInfo.slots.filter((s) => s.available && s.active).length} available
                         </p>
                       </div>
                       <button
@@ -530,7 +610,15 @@ export default function AdminDashboard() {
                                 <span className="text-gray-600">● Disabled</span>
                               )}
                             </div>
-                            {!slot.booked && (
+                            {slot.booked ? (
+                              <button
+                                onClick={() => reenableSlot(dateSlotsInfo.date, slot.time, slot.label, dateSlotsInfo.mode)}
+                                disabled={reenablingSlot === `${dateSlotsInfo.date}-${slot.time}-${dateSlotsInfo.mode}`}
+                                className="w-full px-2 py-1 text-xs rounded font-semibold transition-colors bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                              >
+                                {reenablingSlot === `${dateSlotsInfo.date}-${slot.time}-${dateSlotsInfo.mode}` ? "Re-enabling..." : "Re-enable Slot"}
+                              </button>
+                            ) : (
                               <button
                                 onClick={() => toggleDateSlot(dateSlotsInfo.date, slot.time, slot.active)}
                                 className={`w-full px-2 py-1 text-xs rounded font-semibold transition-colors ${
@@ -561,42 +649,58 @@ export default function AdminDashboard() {
                 Global Default Slots
               </h2>
               <p className="text-sm text-primary-600 mb-4">
-                These are the default time slots available every day (unless overridden for specific dates)
+                These are the default time slots available every day (unless overridden for specific dates). Toggle separately for online and in-clinic.
               </p>
 
               {slots.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {slots.map((slot) => (
                     <div
                       key={slot.time}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        slot.active
-                          ? "bg-primary-50 border-primary-400"
-                          : "bg-gray-100 border-gray-300 opacity-60"
-                      }`}
+                      className="p-4 rounded-lg border-2 border-primary-300 bg-primary-50"
                     >
                       <div className="flex flex-col">
-                        <span className="font-semibold text-primary-900 mb-2">
+                        <span className="font-semibold text-primary-900 mb-3 text-lg">
                           {slot.label}
                         </span>
-                        <div className="flex gap-2">
+
+                        {/* Online Toggle */}
+                        <div className="flex items-center justify-between mb-2 p-2 bg-white rounded">
+                          <span className="text-sm text-primary-700">🌐 Online</span>
                           <button
-                            onClick={() => toggleSlotStatus(slot.time, slot.active)}
-                            className={`flex-1 px-2 py-1 text-xs rounded font-semibold transition-colors ${
-                              slot.active
-                                ? "bg-green-500 hover:bg-green-600 text-white"
-                                : "bg-yellow-500 hover:bg-yellow-600 text-white"
+                            onClick={() => toggleSlotStatus(slot.time, slot.activeOnline, 'online')}
+                            className={`px-3 py-1 text-xs rounded font-semibold transition-colors ${
+                              slot.activeOnline
+                                ? "bg-blue-500 hover:bg-blue-600 text-white"
+                                : "bg-gray-400 hover:bg-gray-500 text-white"
                             }`}
                           >
-                            {slot.active ? "Active" : "Inactive"}
-                          </button>
-                          <button
-                            onClick={() => removeSlot(slot.time)}
-                            className="px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded font-semibold transition-colors"
-                          >
-                            Remove
+                            {slot.activeOnline ? "Active" : "Inactive"}
                           </button>
                         </div>
+
+                        {/* In-Clinic Toggle */}
+                        <div className="flex items-center justify-between mb-2 p-2 bg-white rounded">
+                          <span className="text-sm text-primary-700">🏥 In-Clinic</span>
+                          <button
+                            onClick={() => toggleSlotStatus(slot.time, slot.activeInClinic, 'in-clinic')}
+                            className={`px-3 py-1 text-xs rounded font-semibold transition-colors ${
+                              slot.activeInClinic
+                                ? "bg-green-500 hover:bg-green-600 text-white"
+                                : "bg-gray-400 hover:bg-gray-500 text-white"
+                            }`}
+                          >
+                            {slot.activeInClinic ? "Active" : "Inactive"}
+                          </button>
+                        </div>
+
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeSlot(slot.time)}
+                          className="mt-2 w-full px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded font-semibold transition-colors"
+                        >
+                          Remove Slot
+                        </button>
                       </div>
                     </div>
                   ))}

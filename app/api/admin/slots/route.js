@@ -6,6 +6,7 @@ import {
   addSlot,
   removeSlot,
   getAllBookings,
+  cancelBooking,
 } from "@/lib/slotManagerDB";
 
 // GET - Get all slots (admin view)
@@ -74,14 +75,14 @@ export async function POST(request) {
   }
 }
 
-// PATCH - Update slot status
+// PATCH - Update slot status (mode-specific)
 export async function PATCH(request) {
   if (!isAuthenticated(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { time, active } = await request.json();
+    const { time, active, mode } = await request.json();
 
     if (!time || active === undefined) {
       return NextResponse.json(
@@ -90,10 +91,10 @@ export async function PATCH(request) {
       );
     }
 
-    const slot = await updateSlotStatus(time, active);
+    const slot = await updateSlotStatus(time, active, mode);
     return NextResponse.json({
       success: true,
-      message: "Slot status updated",
+      message: `Slot status updated${mode ? ` for ${mode}` : ''}`,
       slot,
     });
   } catch (error) {
@@ -131,6 +132,45 @@ export async function DELETE(request) {
     console.error("Error removing slot:", error);
     return NextResponse.json(
       { error: "Failed to remove slot" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Cancel booking to re-enable a booked slot (mode-specific)
+export async function PUT(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { date, time, mode } = await request.json();
+
+    if (!date || !time) {
+      return NextResponse.json(
+        { error: "Date and time are required" },
+        { status: 400 }
+      );
+    }
+
+    const result = await cancelBooking(date, time, mode);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.message },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Booking cancelled and slot re-enabled successfully${mode ? ` for ${mode}` : ''}`,
+      booking: result.booking,
+    });
+  } catch (error) {
+    console.error("Error cancelling booking:", error);
+    return NextResponse.json(
+      { error: "Failed to cancel booking" },
       { status: 500 }
     );
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { trackPurchase } from "@/lib/tracking";
 
 function PaymentStatusHandler() {
   const router = useRouter();
@@ -81,6 +82,17 @@ function PaymentStatusHandler() {
 
         sessionStorage.removeItem("reservationId");
         sessionStorage.removeItem("pendingBooking");
+
+        // Track purchase event
+        trackPurchase(
+          paymentId,
+          150,
+          {
+            date: booking.date,
+            time: booking.time,
+            mode: booking.mode
+          }
+        );
 
         setStatus("success");
         setMessage("Payment verified successfully! Redirecting...");

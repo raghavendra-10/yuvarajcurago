@@ -2,6 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import {
+  trackPageView,
+  trackAddToCart,
+  trackButtonClick,
+  trackWhatsAppClick,
+  trackScrollDepth,
+  trackFormSubmit
+} from "@/lib/tracking";
 
 export default function BookConsultation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,6 +40,32 @@ export default function BookConsultation() {
     whatsapp: "",
     modeOfContact: "online",
   });
+
+  // Track page view and scroll on component mount
+  useEffect(() => {
+    // Track page view
+    trackPageView('Book Consultation - MyClinic', '/myclinic');
+
+    // Track scroll depth
+    let scrollThresholds = [25, 50, 75, 90];
+    let trackedThresholds = new Set();
+
+    const handleScroll = () => {
+      const scrollPercent = Math.round(
+        (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+      );
+
+      scrollThresholds.forEach(threshold => {
+        if (scrollPercent >= threshold && !trackedThresholds.has(threshold)) {
+          trackedThresholds.add(threshold);
+          trackScrollDepth(threshold);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch dates on component mount
   useEffect(() => {
@@ -175,6 +209,13 @@ export default function BookConsultation() {
     setIsSubmitting(true);
 
     try {
+      // Track form submission and add to cart
+      trackFormSubmit('Booking Form', {
+        mode: formData.modeOfContact,
+        date: selectedDate,
+        time: selectedSlot.label
+      });
+
       // Step 1: Reserve the slot
       const response = await fetch("/api/reserve-slot", {
         method: "POST",
@@ -223,7 +264,7 @@ export default function BookConsultation() {
         <div className="relative w-full pt-20 md:pt-24">
           <div className="relative w-full overflow-hidden">
             {/* Carousel Images - Responsive Height */}
-            <div className="relative w-full h-[200px] sm:h-[250px] md:h-[350px] lg:h-[500px] xl:h-[600px]">
+            <div className="relative w-full h-[150px] sm:h-[250px] md:h-[350px] lg:h-[500px] xl:h-[600px]">
               {carouselImages.map((image, index) => (
                 <div
                   key={index}
@@ -250,7 +291,10 @@ export default function BookConsultation() {
               {carouselImages.map((_, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentSlide(index)}
+                  onClick={() => {
+                    setCurrentSlide(index);
+                    trackButtonClick(`Carousel Slide ${index + 1}`, 'hero_carousel');
+                  }}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     index === currentSlide
                       ? "bg-primary-600 w-8"
@@ -339,6 +383,7 @@ export default function BookConsultation() {
               href="https://maps.google.com/?q=SRV+Hospital+Tilak+Nagar+Chembur"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackButtonClick('View Location', 'find_us_section')}
               className="inline-block text-sm md:text-base text-primary-600 hover:text-primary-700 font-semibold underline"
             >
               View Location
@@ -523,6 +568,7 @@ export default function BookConsultation() {
                     onClick={() => {
                       setFormData((prev) => ({ ...prev, modeOfContact: "online" }));
                       setSelectedSlot(null);
+                      trackAddToCart('Online Video Consult', 'mode_selection', 150);
                     }}
                     className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
                       formData.modeOfContact === "online"
@@ -553,6 +599,7 @@ export default function BookConsultation() {
                     onClick={() => {
                       setFormData((prev) => ({ ...prev, modeOfContact: "in-clinic" }));
                       setSelectedSlot(null);
+                      trackAddToCart('In-Clinic at Chembur', 'mode_selection', 150);
                     }}
                     className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
                       formData.modeOfContact === "in-clinic"
@@ -586,31 +633,35 @@ export default function BookConsultation() {
                   Select Date & Time *
                 </label>
                 <p className="text-xs text-primary-600 mb-2">Choose your preferred date:</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                  {dates.map((dateOption) => (
-                    <button
-                      key={dateOption.date}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDate(dateOption.date);
-                        setSelectedSlot(null);
-                      }}
-                      className={`p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 ${
-                        selectedDate === dateOption.date
-                          ? "bg-primary-600 text-white border-primary-600 shadow-md"
-                          : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
-                      }`}
-                    >
-                      <div className="text-center">
-                        <div className="text-xs opacity-75">
-                          {dateOption.isToday ? "Today" : dateOption.label.split(",")[0]}
+                {/* Horizontal scrollable on mobile, grid on larger screens */}
+                <div className="overflow-x-auto pb-2 -mx-1">
+                  <div className="flex md:grid md:grid-cols-4 lg:grid-cols-7 gap-2 px-1 min-w-max md:min-w-0">
+                    {dates.map((dateOption) => (
+                      <button
+                        key={dateOption.date}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDate(dateOption.date);
+                          setSelectedSlot(null);
+                          trackAddToCart(`Date Selection - ${dateOption.label}`, 'date_selection', 150);
+                        }}
+                        className={`flex-shrink-0 p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 min-w-[100px] md:min-w-0 ${
+                          selectedDate === dateOption.date
+                            ? "bg-primary-600 text-white border-primary-600 shadow-md"
+                            : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="text-xs opacity-75">
+                            {dateOption.isToday ? "Today" : dateOption.label.split(",")[0]}
+                          </div>
+                          <div className="font-bold">
+                            {dateOption.label.split(",")[1]?.trim() || dateOption.label}
+                          </div>
                         </div>
-                        <div className="font-bold">
-                          {dateOption.label.split(",")[1]?.trim() || dateOption.label}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -630,7 +681,10 @@ export default function BookConsultation() {
                         key={slot.time}
                         type="button"
                         disabled={!slot.available}
-                        onClick={() => setSelectedSlot(slot)}
+                        onClick={() => {
+                          setSelectedSlot(slot);
+                          trackAddToCart(`Time Slot - ${slot.label}`, 'slot_selection', 150);
+                        }}
                         className={`p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 ${
                           !slot.available
                             ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
@@ -658,6 +712,11 @@ export default function BookConsultation() {
                   <button
                     type="submit"
                     disabled={isSubmitting || !selectedSlot}
+                    onClick={() => {
+                      if (!isSubmitting && selectedSlot) {
+                        trackButtonClick('Book Your Slot Now', 'booking_form_submit');
+                      }
+                    }}
                     className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-6 md:px-8 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center text-sm md:text-base"
                   >
                     {isSubmitting ? (
@@ -765,6 +824,7 @@ export default function BookConsultation() {
                 href="https://wa.me/917021227203?text=Hi%2C%20I%20need%20help%20with%20my%20booking%20on%20CuraGo."
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClick('need_help_section')}
                 className="text-primary-600 font-semibold hover:text-primary-700 underline"
               >
                 Contact us on WhatsApp
@@ -841,6 +901,7 @@ export default function BookConsultation() {
               href="https://maps.google.com/?q=SRV+Hospital+Tilak+Nagar+Chembur"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackButtonClick('View on Google Maps', 'clinic_location_section')}
               className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               View on Google Maps
@@ -868,6 +929,7 @@ export default function BookConsultation() {
         href="https://wa.me/917021227203?text=Hi%2C%20I%20need%20help%20with%20my%20booking%20on%20CuraGo."
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackWhatsAppClick('sticky_button')}
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20BA5A] text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
         aria-label="Contact on WhatsApp"
       >

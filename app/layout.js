@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,9 +74,42 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        {/* Google Tag Manager - Deferred for better performance */}
+        <Script id="gtm-init" strategy="afterInteractive">
+          {`
+            (function() {
+              var serverHost = window.location.hostname.includes('.co.in')
+                ? 'gtm.curago.co.in'
+                : 'gtm.curago.in';
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({
+                'gtm.start': new Date().getTime(),
+                event: 'gtm.js',
+                server: 'https://' + serverHost
+              });
+
+              var gtmScript = document.createElement('script');
+              gtmScript.async = true;
+              gtmScript.src = 'https://gtm.curago.in/gtm.js?id=GTM-PL6KV3ND';
+              document.head.appendChild(gtmScript);
+            })();
+          `}
+        </Script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://gtm.curago.in/ns.html?id=GTM-PL6KV3ND"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          ></iframe>
+        </noscript>
+
         <Navbar />
         {children}
       </body>
