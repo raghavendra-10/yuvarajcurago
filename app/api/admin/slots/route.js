@@ -48,7 +48,7 @@ export async function POST(request) {
   }
 
   try {
-    const { time, date } = await request.json();
+    const { time, date, mode } = await request.json();
 
     if (!time) {
       return NextResponse.json(
@@ -60,10 +60,10 @@ export async function POST(request) {
     // Auto-generate label from time (e.g., "17:00" -> "5:00 PM")
     const label = formatTimeLabel(time);
 
-    const result = await addSlot(time, label);
+    const result = await addSlot(time, label, mode);
     return NextResponse.json({
       success: true,
-      message: "Slot added successfully",
+      message: `Slot added successfully${mode ? ` for ${mode}` : ''}`,
       slot: result,
     });
   } catch (error) {
@@ -91,10 +91,17 @@ export async function PATCH(request) {
       );
     }
 
+    if (!mode || (mode !== 'online' && mode !== 'in-clinic')) {
+      return NextResponse.json(
+        { error: "Valid mode (online or in-clinic) is required" },
+        { status: 400 }
+      );
+    }
+
     const slot = await updateSlotStatus(time, active, mode);
     return NextResponse.json({
       success: true,
-      message: `Slot status updated${mode ? ` for ${mode}` : ''}`,
+      message: `Slot status updated for ${mode}`,
       slot,
     });
   } catch (error) {

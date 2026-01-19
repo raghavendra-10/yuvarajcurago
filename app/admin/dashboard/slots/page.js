@@ -165,12 +165,13 @@ export default function SlotsPage() {
         body: JSON.stringify({
           time: selectedTime,
           date: selectedDate,
+          mode: activeTab, // Pass the current mode (online or in-clinic)
         }),
       });
 
       const data = await response.json();
       if (data.success) {
-        showMessage('success', 'Slot created successfully!');
+        showMessage('success', `Slot created successfully for ${activeTab}!`);
         setShowAddSlotModal(false);
         setSelectedTime('');
         fetchData();
@@ -462,7 +463,14 @@ export default function SlotsPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6 border-b">
               <div className="flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-gray-800">Add New Slot</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Add New Slot</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Creating for: <span className="font-medium text-blue-600">
+                      {activeTab === 'online' ? 'Online Consultation' : 'In-Clinic Consultation'}
+                    </span>
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setShowAddSlotModal(false);
