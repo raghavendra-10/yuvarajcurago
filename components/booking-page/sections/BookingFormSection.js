@@ -174,10 +174,36 @@ export default function BookingFormSection({
     return dateString === today;
   };
 
-  const handleViewSlots = () => {
+  const handleViewSlots = async () => {
     if (areRequiredFieldsFilled()) {
       setShowSlots(true);
       trackButtonClick("View Slots", `${trackingContext.pageSlug}_view_slots_button`);
+
+      // Track slot view in database
+      try {
+        await fetch('/api/track-slot-view', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            age: parseInt(formData.age),
+            gender: formData.gender,
+            email: formData.email,
+            whatsapp: formData.whatsapp,
+            modeOfContact: formData.modeOfContact,
+            pageName: trackingContext.pageName,
+            pageSlug: trackingContext.pageSlug,
+            referrer: document.referrer || 'direct',
+            userAgent: navigator.userAgent,
+          }),
+        });
+      } catch (error) {
+        console.error('Error tracking slot view:', error);
+        // Don't block the user flow if tracking fails
+      }
+
       if (selectedDate && !isToday(selectedDate)) {
         fetchSlots();
       }
