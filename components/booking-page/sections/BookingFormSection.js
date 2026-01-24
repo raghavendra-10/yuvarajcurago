@@ -181,7 +181,8 @@ export default function BookingFormSection({
 
       // Track slot view in database
       try {
-        await fetch('/api/track-slot-view', {
+        console.log('📊 Tracking slot view...');
+        const response = await fetch('/api/track-slot-view', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -199,8 +200,15 @@ export default function BookingFormSection({
             userAgent: navigator.userAgent,
           }),
         });
+
+        const result = await response.json();
+        if (result.success) {
+          console.log('✅ Slot view tracked successfully:', result.id);
+        } else {
+          console.error('❌ Failed to track slot view:', result.error);
+        }
       } catch (error) {
-        console.error('Error tracking slot view:', error);
+        console.error('❌ Error tracking slot view:', error);
         // Don't block the user flow if tracking fails
       }
 

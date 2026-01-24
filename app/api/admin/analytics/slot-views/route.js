@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import dbConnect from "@/lib/mongodb";
+import connectDB from "@/lib/mongodb";
 import SlotView from "@/models/SlotView";
 import Booking from "@/models/Booking";
 
@@ -11,7 +11,7 @@ export async function GET(request) {
   }
 
   try {
-    await dbConnect();
+    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');

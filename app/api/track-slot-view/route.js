@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
+import connectDB from "@/lib/mongodb";
 import SlotView from "@/models/SlotView";
 
 export async function POST(request) {
   try {
-    await dbConnect();
+    await connectDB();
 
     const {
       name,

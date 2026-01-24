@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState(null);
@@ -12,11 +12,7 @@ export default function AnalyticsPage() {
     endDate: '',
   });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [filterMode, filterPage, dateRange]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
@@ -40,7 +36,11 @@ export default function AnalyticsPage() {
       console.error('Error fetching analytics:', error);
       setLoading(false);
     }
-  };
+  }, [filterMode, filterPage, dateRange]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const handleDateRangeChange = (field, value) => {
     setDateRange(prev => ({ ...prev, [field]: value }));
