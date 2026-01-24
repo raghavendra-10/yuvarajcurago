@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 import { isAuthenticated } from '@/lib/auth';
 
-// POST - Upload image
+// POST - Upload image to Vercel Blob Storage
 export async function POST(request) {
   try {
     // Check authentication
@@ -44,12 +42,6 @@ export async function POST(request) {
       );
     }
 
-    // Create upload directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'booking-pages', slug);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
@@ -60,19 +52,19 @@ export async function POST(request) {
       .toLowerCase()
       .substring(0, 50); // Limit length
     const filename = `${sanitizedName}-${timestamp}-${randomString}.${extension}`;
-    const filepath = path.join(uploadDir, filename);
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    // Create blob path with folder structure
+    const blobPath = `booking-pages/${slug}/${filename}`;
 
-    // Return public URL
-    const url = `/uploads/booking-pages/${slug}/${filename}`;
+    // Upload to Vercel Blob
+    const blob = await put(blobPath, file, {
+      access: 'public',
+      addRandomSuffix: false,
+    });
 
     return NextResponse.json({
       success: true,
-      url,
+      url: blob.url,
       filename,
       size: file.size,
       type: file.type,
