@@ -15,7 +15,7 @@ export default function AdminLogin() {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value.trim(), // Trim whitespace
     });
     setError("");
   };
@@ -37,7 +37,9 @@ export default function AdminLogin() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Store token in localStorage
+        // Clean up old token key if it exists
+        localStorage.removeItem("token");
+        // Store token in localStorage (key must match dashboard layout)
         localStorage.setItem("adminToken", data.token);
         // Redirect to dashboard
         router.push("/admin/dashboard");

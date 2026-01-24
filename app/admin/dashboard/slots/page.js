@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useModal } from '@/contexts/ModalContext';
 
 export default function SlotsPage() {
+  const { showConfirm } = useModal();
   const [selectedDate, setSelectedDate] = useState('');
   const [activeTab, setActiveTab] = useState('online'); // 'online' or 'in-clinic'
   const [slots, setSlots] = useState([]);
@@ -185,7 +187,15 @@ export default function SlotsPage() {
   };
 
   const handleRemoveSlot = async (time) => {
-    if (!confirm('Are you sure you want to remove this slot? This action cannot be undone.')) {
+    const confirmed = await showConfirm({
+      title: 'Remove Slot',
+      message: 'Are you sure you want to remove this slot? This action cannot be undone.',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -220,11 +230,15 @@ export default function SlotsPage() {
   };
 
   const handleReactivateSlot = async (booking) => {
-    if (
-      !confirm(
-        `Are you sure you want to reactivate this slot? This will cancel the booking for ${booking.name}.`
-      )
-    ) {
+    const confirmed = await showConfirm({
+      title: 'Reactivate Slot',
+      message: `Are you sure you want to reactivate this slot? This will cancel the booking for ${booking.name}.`,
+      confirmText: 'Reactivate',
+      cancelText: 'Cancel',
+      type: 'warning'
+    });
+
+    if (!confirmed) {
       return;
     }
 

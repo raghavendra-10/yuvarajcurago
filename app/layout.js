@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Script from "next/script";
+import { ModalProvider } from "@/contexts/ModalContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -76,7 +77,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         {/* Google Tag Manager - Deferred for better performance */}
-        <Script id="gtm-init" strategy="afterInteractive">
+        <Script id="gtm-init" strategy="lazyOnload">
           {`
             (function() {
               var serverHost = window.location.hostname.includes('.co.in')
@@ -99,6 +100,7 @@ export default function RootLayout({ children }) {
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning={true}
       >
         {/* Google Tag Manager (noscript) */}
         <noscript>
@@ -110,8 +112,10 @@ export default function RootLayout({ children }) {
           ></iframe>
         </noscript>
 
-        <Navbar />
-        {children}
+        <ModalProvider>
+          <Navbar />
+          {children}
+        </ModalProvider>
       </body>
     </html>
   );

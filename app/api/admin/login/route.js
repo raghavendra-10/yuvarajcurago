@@ -5,7 +5,11 @@ export async function POST(request) {
   try {
     const { username, password } = await request.json();
 
-    if (!username || !password) {
+    // Trim whitespace from inputs
+    const trimmedUsername = username?.trim();
+    const trimmedPassword = password?.trim();
+
+    if (!trimmedUsername || !trimmedPassword) {
       return NextResponse.json(
         { error: "Username and password are required" },
         { status: 400 }
@@ -13,9 +17,9 @@ export async function POST(request) {
     }
 
     // Verify credentials
-    if (verifyAdminCredentials(username, password)) {
+    if (verifyAdminCredentials(trimmedUsername, trimmedPassword)) {
       // Generate JWT token
-      const token = generateToken({ username, role: "admin" });
+      const token = generateToken({ username: trimmedUsername, role: "admin" });
 
       return NextResponse.json({
         success: true,
@@ -23,6 +27,8 @@ export async function POST(request) {
         message: "Login successful",
       });
     } else {
+      // Log failed attempt for debugging (without exposing password)
+      console.error("Login failed for username:", trimmedUsername);
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }

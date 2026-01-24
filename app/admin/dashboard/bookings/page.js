@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useModal } from '@/contexts/ModalContext';
 
 export default function BookingsPage() {
+  const { showAlert, showConfirm } = useModal();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,15 @@ export default function BookingsPage() {
   };
 
   const handleCancelBooking = async (bookingId) => {
-    if (!confirm('Are you sure you want to cancel this booking? This will reactivate the slot.')) {
+    const confirmed = await showConfirm({
+      title: 'Cancel Booking',
+      message: 'Are you sure you want to cancel this booking? This will reactivate the slot.',
+      confirmText: 'Cancel Booking',
+      cancelText: 'Keep Booking',
+      type: 'warning'
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -135,15 +145,27 @@ export default function BookingsPage() {
 
       const data = await response.json();
       if (data.success) {
-        alert('Booking cancelled successfully!');
+        await showAlert({
+          title: 'Success',
+          message: 'Booking cancelled successfully!',
+          type: 'success'
+        });
         setSelectedBooking(null);
         fetchBookings();
       } else {
-        alert(data.error || 'Failed to cancel booking');
+        await showAlert({
+          title: 'Error',
+          message: data.error || 'Failed to cancel booking',
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      alert('Failed to cancel booking');
+      await showAlert({
+        title: 'Error',
+        message: 'Failed to cancel booking',
+        type: 'error'
+      });
     }
   };
 
