@@ -176,6 +176,7 @@ export default function BookConsultation() {
     if (areRequiredFieldsFilled()) {
       setShowSlots(true);
       trackButtonClick('View Slots', 'view_slots_button');
+      trackAddToCart('View Available Slots', 'view_slots_button', 150);
 
       // Track slot view in database
       try {
@@ -657,7 +658,6 @@ export default function BookConsultation() {
                       setFormData((prev) => ({ ...prev, modeOfContact: "online" }));
                       setSelectedSlot(null);
                       setShowSlots(false);
-                      trackAddToCart('Online Video Consult', 'mode_selection', 150);
                     }}
                     className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
                       formData.modeOfContact === "online"
@@ -689,7 +689,6 @@ export default function BookConsultation() {
                       setFormData((prev) => ({ ...prev, modeOfContact: "in-clinic" }));
                       setSelectedSlot(null);
                       setShowSlots(false);
-                      trackAddToCart('In-Clinic at Chembur', 'mode_selection', 150);
                     }}
                     className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
                       formData.modeOfContact === "in-clinic"
@@ -771,7 +770,6 @@ export default function BookConsultation() {
                         onClick={() => {
                           setSelectedDate(dateOption.date);
                           setSelectedSlot(null);
-                          trackAddToCart(`Date Selection - ${dateOption.label}`, 'date_selection', 150);
                         }}
                         className={`flex-shrink-0 p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 min-w-[100px] md:min-w-0 ${
                           selectedDate === dateOption.date
@@ -844,7 +842,6 @@ export default function BookConsultation() {
                             disabled={!slot.available}
                             onClick={() => {
                               setSelectedSlot(slot);
-                              trackAddToCart(`Time Slot - ${slot.label}`, 'slot_selection', 150);
                             }}
                             className={`p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 ${
                               !slot.available

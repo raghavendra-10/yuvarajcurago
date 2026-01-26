@@ -178,6 +178,7 @@ export default function BookingFormSection({
     if (areRequiredFieldsFilled()) {
       setShowSlots(true);
       trackButtonClick("View Slots", `${trackingContext.pageSlug}_view_slots_button`);
+      trackAddToCart("View Available Slots", `${trackingContext.pageSlug}_view_slots`, bookingFee);
 
       // Track slot view in database
       try {
@@ -443,7 +444,6 @@ export default function BookingFormSection({
                     setFormData((prev) => ({ ...prev, modeOfContact: "online" }));
                     setSelectedSlot(null);
                     setShowSlots(false);
-                    trackAddToCart("Online Video Consult", `${trackingContext.pageSlug}_mode_selection`, bookingFee);
                   }}
                   className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
                     formData.modeOfContact === "online"
@@ -470,7 +470,6 @@ export default function BookingFormSection({
                     setFormData((prev) => ({ ...prev, modeOfContact: "in-clinic" }));
                     setSelectedSlot(null);
                     setShowSlots(false);
-                    trackAddToCart("In-Clinic at Chembur", `${trackingContext.pageSlug}_mode_selection`, bookingFee);
                   }}
                   className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
                     formData.modeOfContact === "in-clinic"
@@ -541,7 +540,6 @@ export default function BookingFormSection({
                           onClick={() => {
                             setSelectedDate(dateOption.date);
                             setSelectedSlot(null);
-                            trackAddToCart(`Date Selection - ${dateOption.label}`, `${trackingContext.pageSlug}_date_selection`, bookingFee);
                           }}
                           className={`flex-shrink-0 p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 min-w-[100px] md:min-w-0 ${
                             selectedDate === dateOption.date
@@ -614,7 +612,6 @@ export default function BookingFormSection({
                               disabled={!slot.available}
                               onClick={() => {
                                 setSelectedSlot(slot);
-                                trackAddToCart(`Time Slot - ${slot.label}`, `${trackingContext.pageSlug}_slot_selection`, bookingFee);
                               }}
                               className={`p-2 md:p-3 rounded-lg text-xs md:text-sm font-semibold transition-all border-2 ${
                                 !slot.available
