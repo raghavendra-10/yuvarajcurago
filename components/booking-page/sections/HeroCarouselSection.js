@@ -16,20 +16,29 @@ export default function HeroCarouselSection({
 }) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Filter out images with empty urls
+  const validImages = images.filter(image => {
+    const url = typeof image === 'string' ? image : image?.url;
+    return url && url.trim() !== '';
+  });
+
   // Auto-scroll carousel
   useEffect(() => {
-    if (images.length > 1 && autoPlaySpeed > 0) {
+    if (validImages.length > 1 && autoPlaySpeed > 0) {
       const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % images.length);
+        setCurrentSlide((prev) => (prev + 1) % validImages.length);
       }, autoPlaySpeed);
 
       return () => clearInterval(interval);
     }
-  }, [images.length, autoPlaySpeed]);
+  }, [validImages.length, autoPlaySpeed]);
 
-  if (!images || images.length === 0) {
+  if (!validImages || validImages.length === 0) {
     return null;
   }
+
+  // Use validImages instead of images throughout the component
+  const displayImages = validImages;
 
   return (
     <section className="relative w-full overflow-hidden bg-gray-100">
@@ -37,7 +46,7 @@ export default function HeroCarouselSection({
         <div className="relative w-full overflow-hidden">
           {/* Carousel Images */}
           <div className="relative w-full h-[150px] sm:h-[250px] md:h-[350px] lg:h-[500px] xl:h-[600px]">
-            {images.map((image, index) => (
+            {displayImages.map((image, index) => (
               <div
                 key={index}
                 className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
@@ -66,9 +75,9 @@ export default function HeroCarouselSection({
           </div>
 
           {/* Carousel Indicators */}
-          {showIndicators && images.length > 1 && (
+          {showIndicators && displayImages.length > 1 && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
-              {images.map((_, index) => (
+              {displayImages.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => {

@@ -35,8 +35,16 @@ export default function ImageUploader({
       setUploading(true);
       setError(null);
 
+      console.log('📤 Starting image upload:', {
+        fileName: file.name,
+        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        fileType: file.type,
+        slug: slug
+      });
+
       // Validate file
       validateFile(file);
+      console.log('✅ File validation passed');
 
       // Create FormData
       const formData = new FormData();
@@ -44,6 +52,7 @@ export default function ImageUploader({
       formData.append("slug", slug);
 
       // Upload to API
+      console.log('📡 Uploading to /api/admin/upload-image...');
       const response = await fetch("/api/admin/upload-image", {
         method: "POST",
         headers: {
@@ -52,14 +61,25 @@ export default function ImageUploader({
         body: formData,
       });
 
+      console.log('📥 Upload response status:', response.status);
+
       if (!response.ok) {
         const data = await response.json();
+        console.error('❌ Upload failed:', data);
         throw new Error(data.error || "Upload failed");
       }
 
       const data = await response.json();
+      console.log('✅ Upload successful:', data);
+
+      if (!data.success || !data.url) {
+        throw new Error('Invalid response from server');
+      }
+
       onChange(data.url);
+      console.log('✅ Image URL set:', data.url);
     } catch (err) {
+      console.error('❌ Upload error:', err);
       setError(err.message);
     } finally {
       setUploading(false);
@@ -171,8 +191,15 @@ export default function ImageUploader({
               src={value}
               alt="Preview"
               className="w-full h-full object-contain"
+              onLoad={() => {
+                console.log('✅ Image loaded successfully:', value);
+                setError(null);
+              }}
               onError={(e) => {
-                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23ddd' width='400' height='300'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='18'%3EImage not found%3C/text%3E%3C/svg%3E";
+                const errorMsg = `Failed to load image: ${value}`;
+                console.error('❌ Image load error:', errorMsg);
+                setError(errorMsg);
+                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23ddd' width='400' height='300'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='14'%3EImage failed to load%3C/text%3E%3C/svg%3E";
               }}
             />
           </div>

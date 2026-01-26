@@ -16,18 +16,20 @@ export default function DoctorProfileSection({
   return (
     <section className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
       <div className="max-w-6xl mx-auto">
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center ${!isLeftLayout ? "lg:grid-flow-dense" : ""}`}>
+        <div className={`grid grid-cols-1 ${imageUrl ? 'lg:grid-cols-2' : ''} gap-8 lg:gap-12 items-center ${!isLeftLayout ? "lg:grid-flow-dense" : ""}`}>
           {/* Image */}
-          <div className={`${!isLeftLayout ? "lg:col-start-2" : ""}`}>
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src={imageUrl}
-                alt={title}
-                fill
-                className="object-cover"
-              />
+          {imageUrl && (
+            <div className={`${!isLeftLayout ? "lg:col-start-2" : ""}`}>
+              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
+                <Image
+                  src={imageUrl}
+                  alt={title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Content */}
           <div className={`${!isLeftLayout ? "lg:col-start-1 lg:row-start-1" : ""}`}>

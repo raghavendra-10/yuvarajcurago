@@ -12,7 +12,13 @@ export default function DiseaseIconsScrollSection({
     alt: `Disease ${num}`
   }));
 
-  const displayIcons = icons.length > 0 ? icons : defaultIcons;
+  // Filter out icons with empty urls
+  const validIcons = icons.filter(icon => {
+    const url = typeof icon === 'string' ? icon : icon?.url;
+    return url && url.trim() !== '';
+  });
+
+  const displayIcons = validIcons.length > 0 ? validIcons : defaultIcons;
 
   // Speed classes
   const speedClass = {
