@@ -11,6 +11,7 @@ import {
   trackFormSubmit
 } from "@/lib/tracking";
 import { useModal } from "@/contexts/ModalContext";
+import FooterSection from "@/components/booking-page/sections/FooterSection";
 
 export default function BookConsultation() {
   const { showAlert } = useModal();
@@ -1102,6 +1103,24 @@ export default function BookConsultation() {
           Chat with us
         </span>
       </a>
+
+      {/* Footer */}
+      <FooterSection
+        companyName="CuraGo"
+        tagline="Your Health, Our Priority"
+        address="SRV Hospital, Tilak Nagar, Chembur, Mumbai"
+        phone="+91 7021227203"
+        email="contact@curago.com"
+        showSocialLinks={false}
+        showQuickLinks={true}
+        quickLinks={[
+          { text: "Home", url: "/" },
+          { text: "Book Consultation", url: "#booking" },
+          { text: "About Dr. Yuvaraj", url: "#about" },
+        ]}
+        backgroundColor="primary"
+        trackingContext={{ pageName: "Book Consultation - MyClinic", pageSlug: "myclinic" }}
+      />
     </div>
   );
 }

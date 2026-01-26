@@ -11,6 +11,8 @@ import CustomTextSection from './sections/CustomTextSection';
 import CTAButtonSection from './sections/CTAButtonSection';
 import BookingFormSection from './sections/BookingFormSection';
 import ClinicInfoSection from './sections/ClinicInfoSection';
+import FooterSection from './sections/FooterSection';
+import WhatsAppStickyButton from './sections/WhatsAppStickyButton';
 
 const SECTION_COMPONENTS = {
   hero_carousel: HeroCarouselSection,
@@ -25,6 +27,8 @@ const SECTION_COMPONENTS = {
   cta_button: CTAButtonSection,
   booking_form: BookingFormSection,
   clinic_info: ClinicInfoSection,
+  footer: FooterSection,
+  whatsapp_sticky: WhatsAppStickyButton,
 };
 
 export default function SectionRenderer({ section, trackingContext, consultationFee, bookingFee }) {
