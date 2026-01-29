@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import SectionRenderer from "@/components/booking-page/SectionRenderer";
+import WhatsAppStickyButton from "@/components/booking-page/sections/WhatsAppStickyButton";
+import FooterSection from "@/components/booking-page/sections/FooterSection";
+import BookNowStickyButton from "@/components/booking-page/sections/BookNowStickyButton";
 import { trackPageView } from "@/lib/tracking";
 
 export default function DynamicBookingPage() {
@@ -93,6 +96,14 @@ export default function DynamicBookingPage() {
     pageSlug: slug,
   };
 
+  // Separate special sections from regular sections
+  const regularSections = pageData.sections.filter(
+    (s) => s.type !== "whatsapp_sticky" && s.type !== "footer" && s.type !== "book_now_sticky"
+  );
+  const whatsappSection = pageData.sections.find((s) => s.type === "whatsapp_sticky" && s.visible);
+  const footerSection = pageData.sections.find((s) => s.type === "footer" && s.visible);
+  const bookNowSection = pageData.sections.find((s) => s.type === "book_now_sticky" && s.visible);
+
   return (
     <div className="min-h-screen">
       {/* Preview Banner for Admins */}
@@ -108,7 +119,8 @@ export default function DynamicBookingPage() {
         </div>
       )}
 
-      {pageData.sections.map((section) => (
+      {/* Regular Sections */}
+      {regularSections.map((section) => (
         <SectionRenderer
           key={section._id}
           section={section}
@@ -117,6 +129,29 @@ export default function DynamicBookingPage() {
           bookingFee={pageData.bookingFee}
         />
       ))}
+
+      {/* Footer Section - Always at the end */}
+      {footerSection && (
+        <FooterSection
+          {...footerSection.config}
+          trackingContext={trackingContext}
+        />
+      )}
+
+      {/* Sticky Buttons - Rendered last for proper z-index */}
+      {whatsappSection && (
+        <WhatsAppStickyButton
+          {...whatsappSection.config}
+          trackingContext={trackingContext}
+        />
+      )}
+
+      {bookNowSection && (
+        <BookNowStickyButton
+          {...bookNowSection.config}
+          trackingContext={trackingContext}
+        />
+      )}
     </div>
   );
 }

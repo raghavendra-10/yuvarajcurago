@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useModal } from "@/contexts/ModalContext";
 
@@ -20,6 +20,8 @@ import BookingFormConfig from "@/components/admin/booking-pages/config-forms/Boo
 import ClinicInfoConfig from "@/components/admin/booking-pages/config-forms/ClinicInfoConfig";
 import FooterConfig from "@/components/admin/booking-pages/config-forms/FooterConfig";
 import WhatsAppStickyButtonConfig from "@/components/admin/booking-pages/config-forms/WhatsAppStickyButtonConfig";
+import BookNowStickyButtonConfig from "@/components/admin/booking-pages/config-forms/BookNowStickyButtonConfig";
+import ProfessionalFeesConfig from "@/components/admin/booking-pages/config-forms/ProfessionalFeesConfig";
 
 // Section type definitions with metadata and SVG icons
 const SECTION_TYPES = [
@@ -221,6 +223,27 @@ const SECTION_TYPES = [
     },
   },
   {
+    type: "professional_fees",
+    name: "Professional Fees",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    description: "Consultation fees table",
+    defaultConfig: {
+      title: "Professional Consultation Fees",
+      subtitle: "",
+      fees: [
+        { serviceType: "In-Clinic (Offline)", newConsultation: "1000", followUp: "800" },
+        { serviceType: "Video (Online)", newConsultation: "1000", followUp: "800" },
+      ],
+      showCurrency: true,
+      currency: "₹",
+      backgroundColor: "white",
+    },
+  },
+  {
     type: "footer",
     name: "Footer",
     icon: (
@@ -234,7 +257,7 @@ const SECTION_TYPES = [
       tagline: "Your Health, Our Priority",
       address: "SRV Hospital, Tilak Nagar, Chembur, Mumbai",
       phone: "+91 7021227203",
-      email: "contact@curago.com",
+      email: "team@curago.in",
       showSocialLinks: false,
       facebookUrl: "",
       instagramUrl: "",
@@ -267,10 +290,27 @@ const SECTION_TYPES = [
       backgroundColor: "#25D366",
     },
   },
+  {
+    type: "book_now_sticky",
+    name: "Book Now Sticky Button",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+    description: "Floating Book Now CTA button",
+    defaultConfig: {
+      buttonText: "Book Now",
+      buttonLink: "#booking",
+      tooltipText: "Book your appointment",
+      position: "bottom-left",
+      backgroundColor: "#1e40af",
+      textColor: "#ffffff",
+    },
+  },
 ];
 
 export default function PageBuilderEditor() {
-  const router = useRouter();
   const params = useParams();
   const { id } = params;
   const { showConfirm } = useModal();
@@ -294,7 +334,7 @@ export default function PageBuilderEditor() {
 
   // UI state
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
-  const [showSectionPalette, setShowSectionPalette] = useState(true);
+  const [showSectionPalette] = useState(true);
   const [showConfig, setShowConfig] = useState(false);
   const [isMobilePaletteOpen, setIsMobilePaletteOpen] = useState(false);
 
@@ -777,8 +817,10 @@ export default function PageBuilderEditor() {
                   cta_button: CTAButtonConfig,
                   booking_form: BookingFormConfig,
                   clinic_info: ClinicInfoConfig,
+                  professional_fees: ProfessionalFeesConfig,
                   footer: FooterConfig,
                   whatsapp_sticky: WhatsAppStickyButtonConfig,
+                  book_now_sticky: BookNowStickyButtonConfig,
                 }[selectedSection.type];
 
                 if (!ConfigComponent) {

@@ -7,7 +7,7 @@ export default function FooterSection({
   tagline = "Your Health, Our Priority",
   address = "SRV Hospital, Tilak Nagar, Chembur, Mumbai",
   phone = "+91 7021227203",
-  email = "contact@curago.com",
+  email = "team@curago.in",
   showSocialLinks = true,
   facebookUrl = "",
   instagramUrl = "",

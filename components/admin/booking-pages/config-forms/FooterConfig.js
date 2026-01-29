@@ -97,7 +97,7 @@ export default function FooterConfig({ config, onChange, slug }) {
               type="email"
               value={config.email || ""}
               onChange={(e) => handleChange("email", e.target.value)}
-              placeholder="contact@curago.com"
+              placeholder="team@curago.in"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>

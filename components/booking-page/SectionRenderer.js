@@ -13,6 +13,8 @@ import BookingFormSection from './sections/BookingFormSection';
 import ClinicInfoSection from './sections/ClinicInfoSection';
 import FooterSection from './sections/FooterSection';
 import WhatsAppStickyButton from './sections/WhatsAppStickyButton';
+import BookNowStickyButton from './sections/BookNowStickyButton';
+import ProfessionalFeesSection from './sections/ProfessionalFeesSection';
 
 const SECTION_COMPONENTS = {
   hero_carousel: HeroCarouselSection,
@@ -29,6 +31,8 @@ const SECTION_COMPONENTS = {
   clinic_info: ClinicInfoSection,
   footer: FooterSection,
   whatsapp_sticky: WhatsAppStickyButton,
+  book_now_sticky: BookNowStickyButton,
+  professional_fees: ProfessionalFeesSection,
 };
 
 export default function SectionRenderer({ section, trackingContext, consultationFee, bookingFee }) {

@@ -46,6 +46,9 @@ export default function HeroSection() {
               </p>
               {/* Primary CTA - Razorpay Payment Button */}
               <RazorpayButton />
+              <p className="text-sm text-gray-600 mt-2">
+                Check your Gut-Brain Axis orientation
+              </p>
             </div>
           </div>
 
@@ -63,6 +66,9 @@ export default function HeroSection() {
             <div className="flex flex-col items-center justify-center text-center px-4 py-4 bg-white">
               {/* Primary CTA - Razorpay Payment Button */}
               <RazorpayButton />
+              <p className="text-sm text-gray-600 mt-2">
+                Check your Gut-Brain Axis orientation
+              </p>
             </div>
           </div>
         </div>
