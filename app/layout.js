@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Script from "next/script";
 import { ModalProvider } from "@/contexts/ModalContext";
+import WyltoChatbot from "@/components/WyltoChatbot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -116,7 +117,8 @@ export default function RootLayout({ children }) {
             })();
           `}
         </Script>
-      </head>
+
+              </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
@@ -135,6 +137,9 @@ export default function RootLayout({ children }) {
           <Navbar />
           {children}
         </ModalProvider>
+
+        {/* WhatsApp Chatbot Widget */}
+        <WyltoChatbot />
       </body>
     </html>
   );
