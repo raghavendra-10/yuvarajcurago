@@ -90,7 +90,7 @@ export const metadata = {
     maximumScale: 5,
   },
 };
-
+ 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
