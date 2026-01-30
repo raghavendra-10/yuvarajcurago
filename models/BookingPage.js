@@ -16,7 +16,11 @@ const SectionSchema = new mongoose.Schema({
       'custom_text',
       'cta_button',
       'booking_form',
-      'clinic_info'
+      'clinic_info',
+      'professional_fees',
+      'footer',
+      'whatsapp_sticky',
+      'book_now_sticky'
     ],
   },
   order: {
