@@ -162,6 +162,20 @@ export default function DashboardLayout({ children }) {
             </svg>
             <span>Blog Articles</span>
           </Link>
+
+          <Link
+            href="/admin/dashboard/forum"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+              isActive('/admin/dashboard/forum')
+                ? 'bg-blue-50 text-blue-600 font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <span>Forum</span>
+          </Link>
         </nav>
 
         {/* Logout Button */}

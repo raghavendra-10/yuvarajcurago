@@ -25,7 +25,12 @@ const BookingSchema = new mongoose.Schema({
   mode: {
     type: String,
     required: true,
-    enum: ['online', 'in-clinic'],
+    // Dynamic modes - no enum restriction
+  },
+  modeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ConsultationMode',
+    // Optional for backward compatibility with existing bookings
   },
   date: {
     type: String,

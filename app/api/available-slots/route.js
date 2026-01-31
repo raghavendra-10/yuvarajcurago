@@ -3,6 +3,9 @@ import {
   getEffectiveSlotsForDate,
   isSlotBooked,
   releaseExpiredReservations,
+  getActiveConsultationModes,
+  getModeById,
+  getModeByName,
 } from "@/lib/slotManagerDB";
 import { format, addDays, startOfDay } from "date-fns";
 
@@ -14,7 +17,8 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
-    const mode = searchParams.get("mode") || "online";
+    const modeId = searchParams.get("modeId");
+    const modeName = searchParams.get("mode"); // For backward compatibility
 
     if (!date) {
       return NextResponse.json(
@@ -23,8 +27,31 @@ export async function GET(request) {
       );
     }
 
-    // Get effective slots for this date (considering date-specific overrides and blocks)
-    const effectiveSlots = await getEffectiveSlotsForDate(date, mode);
+    // Get mode - either by ID or by name (for backward compatibility)
+    let mode = null;
+    if (modeId) {
+      mode = await getModeById(modeId);
+    } else if (modeName) {
+      mode = await getModeByName(modeName);
+    }
+
+    if (!mode) {
+      // If no mode specified, get first available mode
+      const modes = await getActiveConsultationModes();
+      if (modes.length > 0) {
+        mode = modes[0];
+      } else {
+        return NextResponse.json({
+          success: true,
+          dates: [],
+          slots: [],
+          message: "No consultation modes available",
+        });
+      }
+    }
+
+    // Get effective slots for this date and mode (using WeeklySchedule)
+    const effectiveSlots = await getEffectiveSlotsForDate(date, mode._id);
 
     // Get current time in IST (UTC + 5:30)
     const now = new Date();
@@ -37,9 +64,8 @@ export async function GET(request) {
     const filteredSlots = effectiveSlots.filter((slot) => {
       // If the selected date is today, apply time restrictions
       if (date === today) {
-        // Determine minimum booking time based on mode
-        // Online: 60 minutes in advance, Offline: 15 minutes in advance
-        const bufferMinutes = mode === "online" ? 60 : 15;
+        // Default buffer: 60 minutes (can be customized per mode later)
+        const bufferMinutes = 60;
 
         // Parse current time and slot time
         const [currentHour, currentMinute] = currentTime.split(':').map(Number);
@@ -50,23 +76,20 @@ export async function GET(request) {
         const slotTotalMinutes = slotHour * 60 + slotMinute;
 
         // Slot must be at least bufferMinutes in the future
-        // For example: If current time is 4:00 PM (16:00) and mode is online (60 min buffer)
-        // Only slots at 5:00 PM (17:00) or later will be shown
         return slotTotalMinutes >= (currentTotalMinutes + bufferMinutes);
       }
       // For future dates, show all slots
       return true;
     });
 
-    // Check which slots are already booked for the given date and mode
+    // Check which slots are already booked (EXCLUSIVE - checks all modes)
     const availableSlots = await Promise.all(
       filteredSlots.map(async (slot) => {
-        const booked = await isSlotBooked(date, slot.time, mode);
-        const activeStatus = mode === 'online' ? slot.activeOnline : slot.activeInClinic;
+        const booked = await isSlotBooked(date, slot.time);
         return {
           time: slot.time,
           label: slot.label,
-          active: activeStatus,
+          active: slot.isActive,
           available: !booked,
         };
       })
@@ -75,10 +98,10 @@ export async function GET(request) {
     // Generate next 7 days
     const todayStart = startOfDay(new Date());
     const dates = Array.from({ length: 7 }, (_, i) => {
-      const date = addDays(todayStart, i);
+      const dateObj = addDays(todayStart, i);
       return {
-        date: format(date, "yyyy-MM-dd"),
-        label: format(date, "EEE, MMM d"),
+        date: format(dateObj, "yyyy-MM-dd"),
+        label: format(dateObj, "EEE, MMM d"),
         isToday: i === 0,
       };
     });
@@ -87,6 +110,12 @@ export async function GET(request) {
       success: true,
       dates,
       slots: availableSlots,
+      mode: {
+        _id: mode._id,
+        name: mode.name,
+        displayName: mode.displayName,
+        color: mode.color,
+      },
     });
   } catch (error) {
     console.error("Error fetching available slots:", error);

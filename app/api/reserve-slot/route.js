@@ -10,11 +10,11 @@ export async function POST(request) {
     // Auto-cleanup expired reservations before checking availability
     await releaseExpiredReservations();
 
-    const { name, age, gender, whatsapp, email, modeOfContact, date, time } =
+    const { name, age, gender, whatsapp, email, modeOfContact, modeId, date, time } =
       await request.json();
 
     // Validate required fields
-    if (!name || !age || !gender || !whatsapp || !email || !modeOfContact || !date || !time) {
+    if (!name || !age || !gender || !whatsapp || !email || !modeOfContact || !modeId || !date || !time) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
@@ -38,6 +38,7 @@ export async function POST(request) {
       whatsapp: `+91${whatsapp}`,
       email,
       mode: modeOfContact,
+      modeId,
       date,
       time,
     });

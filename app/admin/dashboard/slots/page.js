@@ -1,545 +1,479 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useModal } from '@/contexts/ModalContext';
+import { useState, useEffect } from "react";
 
-export default function SlotsPage() {
-  const { showConfirm } = useModal();
-  const [selectedDate, setSelectedDate] = useState('');
-  const [activeTab, setActiveTab] = useState('online'); // 'online' or 'in-clinic'
-  const [slots, setSlots] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [availableTimes, setAvailableTimes] = useState([]);
+const DAYS = [
+  { id: 1, name: "Monday", short: "Mon" },
+  { id: 2, name: "Tuesday", short: "Tue" },
+  { id: 3, name: "Wednesday", short: "Wed" },
+  { id: 4, name: "Thursday", short: "Thu" },
+  { id: 5, name: "Friday", short: "Fri" },
+  { id: 6, name: "Saturday", short: "Sat" },
+  { id: 0, name: "Sunday", short: "Sun" },
+];
+
+export default function WeeklySchedulePage() {
+  const [modes, setModes] = useState([]);
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [schedule, setSchedule] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState('');
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [availableToCreate, setAvailableToCreate] = useState([]);
+  const [newSlotTime, setNewSlotTime] = useState("");
 
   useEffect(() => {
-    // Set today's date as default
-    const today = new Date().toISOString().split('T')[0];
-    setSelectedDate(today);
+    fetchModes();
+    fetchTimeSlots();
   }, []);
 
   useEffect(() => {
-    if (selectedDate) {
-      fetchData();
+    if (selectedMode) {
+      fetchSchedule();
     }
-  }, [selectedDate]);
+  }, [selectedMode]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchModes = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/slots', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch("/api/admin/consultation-modes");
+      const data = await response.json();
+      if (data.success && data.modes.length > 0) {
+        setModes(data.modes);
+        setSelectedMode(data.modes[0]);
+      }
+    } catch (err) {
+      console.error("Error fetching modes:", err);
+      setError("Failed to fetch consultation modes");
+    }
+  };
+
+  const fetchTimeSlots = async () => {
+    try {
+      const response = await fetch("/api/admin/time-slots?all=true");
       const data = await response.json();
       if (data.success) {
-        setSlots(data.slots);
-        setBookings(data.bookings);
+        setTimeSlots(data.slots);
+        setAvailableToCreate(data.availableToCreate);
       }
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
     }
   };
 
-  const fetchAvailableTimes = async () => {
+  const fetchSchedule = async () => {
+    if (!selectedMode) return;
+    setIsLoading(true);
+
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/admin/available-times?date=${selectedDate}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(`/api/admin/weekly-schedule?modeId=${selectedMode._id}`);
       const data = await response.json();
-      if (data.success && Array.isArray(data.availableTimes)) {
-        setAvailableTimes(data.availableTimes);
-      } else {
-        setAvailableTimes([]);
+
+      if (data.success) {
+        // Build schedule object: { dayOfWeek: { isEnabled, enabledSlots } }
+        const scheduleMap = {};
+        for (const item of data.raw) {
+          scheduleMap[item.dayOfWeek] = {
+            isEnabled: item.isEnabled,
+            enabledSlots: item.enabledSlots || [],
+          };
+        }
+        setSchedule(scheduleMap);
       }
-    } catch (error) {
-      console.error('Error fetching available times:', error);
-      setAvailableTimes([]);
+    } catch (err) {
+      console.error("Error fetching schedule:", err);
+      setError("Failed to fetch schedule");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getBookingForSlot = (time) => {
-    return bookings.find(
-      (booking) =>
-        booking.date === selectedDate &&
-        booking.time === time &&
-        booking.mode === activeTab &&
-        booking.status === 'confirmed'
-    );
-  };
-
-  const getSlotStatus = (time) => {
-    const slot = slots.find((s) => s.time === time);
-    const booking = getBookingForSlot(time);
-
-    if (booking) {
-      return { status: 'booked', label: 'Booked', color: 'bg-green-100 text-green-800', booking };
-    }
-
-    if (!slot) {
-      return { status: 'not-created', label: 'Not Created', color: 'bg-gray-100 text-gray-800' };
-    }
-
-    const isActive = activeTab === 'online' ? slot.activeOnline : slot.activeInClinic;
-
-    if (isActive) {
-      return { status: 'available', label: 'Available', color: 'bg-blue-100 text-blue-800' };
-    } else {
-      return { status: 'disabled', label: 'Disabled', color: 'bg-red-100 text-red-800' };
-    }
-  };
-
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(time);
-      }
-    }
-    return slots;
-  };
-
-  const toggleSlotStatus = async (time) => {
-    const slot = slots.find((s) => s.time === time);
-    if (!slot) {
-      showMessage('error', 'Slot not found. Please create the slot first.');
-      return;
-    }
-
-    const booking = getBookingForSlot(time);
-    if (booking) {
-      showMessage('error', 'Cannot modify a booked slot. Please cancel the booking first.');
-      return;
-    }
-
-    const currentStatus = activeTab === 'online' ? slot.activeOnline : slot.activeInClinic;
-    const newStatus = !currentStatus;
+  const toggleDayEnabled = async (dayOfWeek) => {
+    const currentState = schedule[dayOfWeek]?.isEnabled ?? false;
+    setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/slots', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch("/api/admin/weekly-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          time,
-          mode: activeTab,
-          active: newStatus,
+          modeId: selectedMode._id,
+          dayOfWeek,
+          isEnabled: !currentState,
         }),
       });
 
-      const data = await response.json();
-      if (data.success) {
-        showMessage('success', `Slot ${newStatus ? 'enabled' : 'disabled'} successfully!`);
-        fetchData();
-      } else {
-        showMessage('error', data.error || 'Failed to update slot');
+      if (response.ok) {
+        setSchedule((prev) => ({
+          ...prev,
+          [dayOfWeek]: {
+            ...prev[dayOfWeek],
+            isEnabled: !currentState,
+          },
+        }));
+        setSuccess(`${DAYS.find(d => d.id === dayOfWeek)?.name} ${!currentState ? "enabled" : "disabled"}`);
+        setTimeout(() => setSuccess(""), 2000);
       }
-    } catch (error) {
-      console.error('Error updating slot:', error);
-      showMessage('error', 'Failed to update slot');
+    } catch (err) {
+      console.error("Error toggling day:", err);
+      setError("Failed to update day");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleAddSlot = async () => {
-    if (!selectedTime) {
-      showMessage('error', 'Please select a time');
-      return;
-    }
+  const toggleSlot = async (dayOfWeek, slotTime) => {
+    const daySchedule = schedule[dayOfWeek] || { isEnabled: false, enabledSlots: [] };
+    const isEnabled = daySchedule.enabledSlots.includes(slotTime);
+    setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/slots', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch("/api/admin/weekly-schedule", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          time: selectedTime,
-          date: selectedDate,
-          mode: activeTab, // Pass the current mode (online or in-clinic)
+          modeId: selectedMode._id,
+          dayOfWeek,
+          slotTime,
+          enabled: !isEnabled,
         }),
       });
 
+      if (response.ok) {
+        setSchedule((prev) => {
+          const current = prev[dayOfWeek] || { isEnabled: false, enabledSlots: [] };
+          const newSlots = isEnabled
+            ? current.enabledSlots.filter((s) => s !== slotTime)
+            : [...current.enabledSlots, slotTime].sort();
+          return {
+            ...prev,
+            [dayOfWeek]: {
+              ...current,
+              enabledSlots: newSlots,
+            },
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Error toggling slot:", err);
+      setError("Failed to update slot");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addTimeSlot = async () => {
+    if (!newSlotTime) return;
+
+    try {
+      const response = await fetch("/api/admin/time-slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ time: newSlotTime }),
+      });
+
       const data = await response.json();
-      if (data.success) {
-        showMessage('success', `Slot created successfully for ${activeTab}!`);
+      if (response.ok) {
+        setSuccess(`Time slot ${data.slot.label} added`);
+        setTimeout(() => setSuccess(""), 2000);
+        fetchTimeSlots();
         setShowAddSlotModal(false);
-        setSelectedTime('');
-        fetchData();
+        setNewSlotTime("");
       } else {
-        showMessage('error', data.error || 'Failed to create slot');
+        setError(data.error || "Failed to add time slot");
       }
-    } catch (error) {
-      console.error('Error creating slot:', error);
-      showMessage('error', 'Failed to create slot');
+    } catch (err) {
+      console.error("Error adding slot:", err);
+      setError("Failed to add time slot");
     }
   };
 
-  const handleRemoveSlot = async (time) => {
-    const confirmed = await showConfirm({
-      title: 'Remove Slot',
-      message: 'Are you sure you want to remove this slot? This action cannot be undone.',
-      confirmText: 'Remove',
-      cancelText: 'Cancel',
-      type: 'danger'
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    const booking = getBookingForSlot(time);
-    if (booking) {
-      showMessage('error', 'Cannot remove a booked slot. Please cancel the booking first.');
-      return;
-    }
+  const deleteTimeSlot = async (time) => {
+    if (!confirm(`Delete this time slot? It will be removed from all schedules.`)) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/slots', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ time }),
+      const response = await fetch(`/api/admin/time-slots?time=${encodeURIComponent(time)}`, {
+        method: "DELETE",
       });
 
-      const data = await response.json();
-      if (data.success) {
-        showMessage('success', 'Slot removed successfully!');
-        fetchData();
-      } else {
-        showMessage('error', data.error || 'Failed to remove slot');
+      if (response.ok) {
+        setSuccess("Time slot deleted");
+        setTimeout(() => setSuccess(""), 2000);
+        fetchTimeSlots();
+        fetchSchedule();
       }
-    } catch (error) {
-      console.error('Error removing slot:', error);
-      showMessage('error', 'Failed to remove slot');
+    } catch (err) {
+      console.error("Error deleting slot:", err);
+      setError("Failed to delete time slot");
     }
   };
 
-  const handleReactivateSlot = async (booking) => {
-    const confirmed = await showConfirm({
-      title: 'Reactivate Slot',
-      message: `Are you sure you want to reactivate this slot? This will cancel the booking for ${booking.name}.`,
-      confirmText: 'Reactivate',
-      cancelText: 'Cancel',
-      type: 'warning'
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/slots', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ bookingId: booking._id }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        showMessage('success', 'Slot reactivated successfully!');
-        fetchData();
-      } else {
-        showMessage('error', data.error || 'Failed to reactivate slot');
-      }
-    } catch (error) {
-      console.error('Error reactivating slot:', error);
-      showMessage('error', 'Failed to reactivate slot');
-    }
+  const isSlotEnabled = (dayOfWeek, slotTime) => {
+    return schedule[dayOfWeek]?.enabledSlots?.includes(slotTime) ?? false;
   };
 
-  const showMessage = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+  const isDayEnabled = (dayOfWeek) => {
+    return schedule[dayOfWeek]?.isEnabled ?? false;
   };
 
-  const formatTime = (time) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Loading slots...</div>
-      </div>
-    );
-  }
-
-  const timeSlots = generateTimeSlots();
+  // Filter active time slots
+  const activeTimeSlots = timeSlots.filter((slot) => slot.isActive);
 
   return (
-    <div>
+    <div className="p-6">
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Slots Management</h1>
-        <p className="text-gray-600 mt-2">Manage consultation slots and availability</p>
+        <h1 className="text-2xl font-bold text-gray-900">Weekly Schedule</h1>
+        <p className="text-gray-600 mt-1">Configure available slots for each consultation mode</p>
       </div>
 
-      {/* Message Alert */}
-      {message.text && (
-        <div
-          className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}
-        >
-          {message.text}
+      {/* Mode Selector */}
+      {modes.length > 0 && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Consultation Mode
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {modes.map((mode) => (
+              <button
+                key={mode._id}
+                onClick={() => setSelectedMode(mode)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  selectedMode?._id === mode._id
+                    ? "text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+                style={{
+                  backgroundColor: selectedMode?._id === mode._id ? mode.color : undefined,
+                }}
+              >
+                {mode.displayName}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Date Picker and Actions */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+      {/* Messages */}
+      {success && (
+        <div className="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">
+          {error}
+          <button onClick={() => setError("")} className="ml-2 underline">Dismiss</button>
+        </div>
+      )}
+
+      {/* No modes message */}
+      {modes.length === 0 && !isLoading && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 mb-2">No consultation modes found.</p>
+          <a
+            href="/admin/dashboard/modes"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Create your first mode →
+          </a>
+        </div>
+      )}
+
+      {/* Schedule Grid */}
+      {selectedMode && (
+        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10">
+                      Time Slot
+                    </th>
+                    {DAYS.map((day) => (
+                      <th key={day.id} className="px-3 py-3 text-center text-sm font-semibold text-gray-700 min-w-[80px]">
+                        {day.short}
+                      </th>
+                    ))}
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Day Enable/Disable Row */}
+                  <tr className="bg-blue-50 border-b">
+                    <td className="px-4 py-3 font-medium text-gray-900 sticky left-0 bg-blue-50 z-10">
+                      Day Enabled
+                    </td>
+                    {DAYS.map((day) => (
+                      <td key={day.id} className="px-3 py-3 text-center">
+                        <button
+                          onClick={() => toggleDayEnabled(day.id)}
+                          disabled={isSaving}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                            isDayEnabled(day.id)
+                              ? "bg-green-500 text-white"
+                              : "bg-gray-200 text-gray-400"
+                          } ${isSaving ? "opacity-50" : "hover:opacity-80"}`}
+                        >
+                          {isDayEnabled(day.id) ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          )}
+                        </button>
+                      </td>
+                    ))}
+                    <td></td>
+                  </tr>
+
+                  {/* Time Slot Rows */}
+                  {activeTimeSlots.map((slot) => (
+                    <tr key={slot.time} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-2 font-medium text-gray-900 sticky left-0 bg-white z-10">
+                        {slot.label}
+                      </td>
+                      {DAYS.map((day) => {
+                        const dayEnabled = isDayEnabled(day.id);
+                        const slotEnabled = isSlotEnabled(day.id, slot.time);
+                        return (
+                          <td key={day.id} className="px-3 py-2 text-center">
+                            {dayEnabled ? (
+                              <button
+                                onClick={() => toggleSlot(day.id, slot.time)}
+                                disabled={isSaving}
+                                className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
+                                  slotEnabled
+                                    ? "bg-green-100 text-green-600 hover:bg-green-200"
+                                    : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                                } ${isSaving ? "opacity-50" : ""}`}
+                              >
+                                {slotEnabled ? (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          onClick={() => deleteTimeSlot(slot.time)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Delete slot"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Add Slot Row */}
+                  <tr>
+                    <td colSpan={DAYS.length + 2} className="px-4 py-4">
+                      <button
+                        onClick={() => setShowAddSlotModal(true)}
+                        className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Time Slot
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-600">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
+          <span>Day/Slot Enabled</span>
         </div>
-      </div>
-
-      {/* Online/Offline Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('online')}
-              className={`flex-1 sm:flex-none py-3 sm:py-4 px-4 sm:px-8 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-                activeTab === 'online'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                  />
-                </svg>
-                <span className="hidden sm:inline">Online Consultation</span>
-                <span className="sm:hidden">Online</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('in-clinic')}
-              className={`flex-1 sm:flex-none py-3 sm:py-4 px-4 sm:px-8 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-                activeTab === 'in-clinic'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-                <span className="hidden sm:inline">In-Clinic Consultation</span>
-                <span className="sm:hidden">In-Clinic</span>
-              </div>
-            </button>
-          </nav>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <span>Disabled</span>
         </div>
-      </div>
-
-      {/* Slots Grid */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-          All Slots for {new Date(selectedDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-          {timeSlots.map((time) => {
-            const slotInfo = getSlotStatus(time);
-            const slot = slots.find((s) => s.time === time);
-
-            return (
-              <div
-                key={time}
-                className={`border rounded-lg p-4 ${
-                  slotInfo.status === 'booked'
-                    ? 'border-green-300 bg-green-50'
-                    : slotInfo.status === 'available'
-                    ? 'border-blue-300 bg-blue-50'
-                    : slotInfo.status === 'disabled'
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-gray-300 bg-gray-50'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="text-lg font-semibold text-gray-800">{formatTime(time)}</div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${slotInfo.color}`}
-                  >
-                    {slotInfo.label}
-                  </span>
-                </div>
-
-                {slotInfo.booking && (
-                  <div className="mt-3 p-3 bg-white rounded border border-green-200">
-                    <div className="text-sm font-medium text-gray-800 mb-1">
-                      {slotInfo.booking.name}
-                    </div>
-                    <div className="text-xs text-gray-600 mb-2">
-                      <div>{slotInfo.booking.email}</div>
-                      <div>{slotInfo.booking.whatsapp}</div>
-                      <div>Age: {slotInfo.booking.age} • {slotInfo.booking.gender}</div>
-                    </div>
-                    <button
-                      onClick={() => handleReactivateSlot(slotInfo.booking)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium py-2 px-3 rounded transition-colors"
-                    >
-                      Reactivate Slot
-                    </button>
-                  </div>
-                )}
-
-                {!slotInfo.booking && slot && (
-                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={() => toggleSlotStatus(time)}
-                      className={`flex-1 ${
-                        slotInfo.status === 'available'
-                          ? 'bg-red-600 hover:bg-red-700'
-                          : 'bg-green-600 hover:bg-green-700'
-                      } text-white text-xs sm:text-sm font-medium py-2 px-2 sm:px-3 rounded transition-colors`}
-                    >
-                      {slotInfo.status === 'available' ? 'Disable' : 'Enable'}
-                    </button>
-                    <button
-                      onClick={() => handleRemoveSlot(time)}
-                      className="bg-gray-600 hover:bg-gray-700 text-white text-xs sm:text-sm font-medium py-2 px-2 sm:px-3 rounded transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-
-                {!slotInfo.booking && !slot && (
-                  <div className="mt-3">
-                    <button
-                      onClick={() => {
-                        setSelectedTime(time);
-                        setShowAddSlotModal(true);
-                      }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium py-2 px-2 sm:px-3 rounded transition-colors"
-                    >
-                      Create Slot
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">—</span>
+          <span>Day not available</span>
         </div>
       </div>
 
       {/* Add Slot Modal */}
       {showAddSlotModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Add New Slot</h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Creating for: <span className="font-medium text-blue-600">
-                      {activeTab === 'online' ? 'Online Consultation' : 'In-Clinic Consultation'}
-                    </span>
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowAddSlotModal(false);
-                    setSelectedTime('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Add Time Slot</h2>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Time
+              </label>
+              <select
+                value={newSlotTime}
+                onChange={(e) => setNewSlotTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a time...</option>
+                {availableToCreate.map((slot) => (
+                  <option key={slot.time} value={slot.time}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Time
-                </label>
-                <select
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Choose a time</option>
-                  {(availableTimes || []).map((time) => (
-                    <option key={time} value={time}>
-                      {formatTime(time)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowAddSlotModal(false);
-                    setSelectedTime('');
-                  }}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddSlot}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  Add Slot
-                </button>
-              </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddSlotModal(false);
+                  setNewSlotTime("");
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addTimeSlot}
+                disabled={!newSlotTime}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+              >
+                Add Slot
+              </button>
             </div>
           </div>
         </div>

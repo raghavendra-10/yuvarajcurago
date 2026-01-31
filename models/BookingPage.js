@@ -80,6 +80,15 @@ const BookingPageSchema = new mongoose.Schema({
     default: 150,
     min: 0,
   },
+  paymentMode: {
+    type: String,
+    enum: ['payment', 'no_payment'],
+    default: 'payment',
+  },
+  razorpayButtonId: {
+    type: String,
+    default: 'pl_S32iD93nAACoNH',
+  },
   views: {
     type: Number,
     default: 0,

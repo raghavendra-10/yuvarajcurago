@@ -15,6 +15,8 @@ export default function BookingFormSection({
   customSubtitle,
   consultationFee = 1000,
   bookingFee = 150,
+  paymentMode = 'payment',
+  razorpayButtonId = 'pl_S32iD93nAACoNH',
   trackingContext = { pageName: "Booking", pageSlug: "booking" },
 }) {
   const router = useRouter();
@@ -31,6 +33,21 @@ export default function BookingFormSection({
   const [reservation, setReservation] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
+  // Dynamic consultation modes
+  const [consultationModes, setConsultationModes] = useState([]);
+  const [isLoadingModes, setIsLoadingModes] = useState(true);
+
+  // OTP states for no-payment mode
+  const [showOTP, setShowOTP] = useState(false);
+  const [otpValue, setOtpValue] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [confirmedBooking, setConfirmedBooking] = useState(null);
+
   const genderDropdownRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -39,8 +56,14 @@ export default function BookingFormSection({
     gender: "",
     email: "",
     whatsapp: "",
-    modeOfContact: "online",
+    modeOfContact: "",
+    modeId: "",
   });
+
+  // Fetch consultation modes on mount
+  useEffect(() => {
+    fetchConsultationModes();
+  }, []);
 
   // Fetch dates on mount
   useEffect(() => {
@@ -49,10 +72,10 @@ export default function BookingFormSection({
 
   // Fetch slots when date or mode changes (only if slots visible)
   useEffect(() => {
-    if (selectedDate && showSlots) {
+    if (selectedDate && showSlots && formData.modeId) {
       fetchSlots();
     }
-  }, [selectedDate, formData.modeOfContact, showSlots]);
+  }, [selectedDate, formData.modeId, showSlots]);
 
   // Close gender dropdown when clicking outside
   useEffect(() => {
@@ -71,7 +94,7 @@ export default function BookingFormSection({
     };
   }, [showGenderDropdown]);
 
-  // Countdown timer
+  // Countdown timer for payment reservation
   useEffect(() => {
     if (timeRemaining > 0) {
       const timer = setInterval(() => {
@@ -95,27 +118,65 @@ export default function BookingFormSection({
     }
   }, [timeRemaining, showAlert]);
 
-  // Load Razorpay payment button
+  // OTP countdown timer
   useEffect(() => {
-    if (showPayment && reservation) {
+    if (otpCountdown > 0) {
+      const timer = setInterval(() => {
+        setOtpCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [otpCountdown]);
+
+  // Load Razorpay payment button (only for payment mode)
+  useEffect(() => {
+    if (showPayment && reservation && paymentMode === 'payment') {
       const container = document.getElementById("razorpay-button-container");
       if (container) {
         container.innerHTML = "";
         const form = document.createElement("form");
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/payment-button.js";
-        script.setAttribute("data-payment_button_id", "pl_S32iD93nAACoNH");
+        script.setAttribute("data-payment_button_id", razorpayButtonId);
         script.async = true;
         form.appendChild(script);
         container.appendChild(form);
       }
     }
-  }, [showPayment, reservation]);
+  }, [showPayment, reservation, paymentMode, razorpayButtonId]);
+
+  const fetchConsultationModes = async () => {
+    setIsLoadingModes(true);
+    try {
+      const response = await fetch('/api/consultation-modes');
+      const data = await response.json();
+      if (data.success && data.modes.length > 0) {
+        setConsultationModes(data.modes);
+        // Auto-select first mode
+        setFormData(prev => ({
+          ...prev,
+          modeOfContact: data.modes[0].name,
+          modeId: data.modes[0]._id,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching consultation modes:", error);
+    } finally {
+      setIsLoadingModes(false);
+    }
+  };
 
   const fetchDates = async () => {
     try {
       const response = await fetch(
-        `/api/available-slots?date=${new Date().toISOString().split("T")[0]}&mode=online`
+        `/api/available-slots?date=${new Date().toISOString().split("T")[0]}`
       );
       const data = await response.json();
       if (data.success) {
@@ -130,12 +191,12 @@ export default function BookingFormSection({
   };
 
   const fetchSlots = async () => {
-    if (!selectedDate) return;
+    if (!selectedDate || !formData.modeId) return;
 
     setIsLoadingSlots(true);
     try {
       const response = await fetch(
-        `/api/available-slots?date=${selectedDate}&mode=${formData.modeOfContact}`
+        `/api/available-slots?date=${selectedDate}&modeId=${formData.modeId}`
       );
       const data = await response.json();
       if (data.success) {
@@ -148,12 +209,125 @@ export default function BookingFormSection({
     }
   };
 
+  // Send OTP for no-payment mode
+  const sendOTP = async () => {
+    if (!formData.whatsapp || formData.whatsapp.length !== 10) {
+      setOtpError("Please enter a valid 10-digit WhatsApp number");
+      return;
+    }
+
+    setOtpSending(true);
+    setOtpError('');
+
+    try {
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          age: formData.age,
+          gender: formData.gender,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          modeOfContact: formData.modeOfContact,
+          modeId: formData.modeId,
+          date: selectedDate,
+          time: selectedSlot.time,
+          pageSlug: trackingContext.pageSlug,
+          pageName: trackingContext.pageName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setOtpSent(true);
+        setOtpCountdown(300); // 5 minutes countdown
+        await showAlert({
+          title: "OTP Sent",
+          message: "A 6-digit OTP has been sent to your WhatsApp. Please enter it below to confirm your booking.",
+          type: "success"
+        });
+      } else {
+        setOtpError(data.error || "Failed to send OTP. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      setOtpError("Failed to send OTP. Please try again.");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  // Verify OTP and complete booking
+  const verifyOTP = async () => {
+    if (!otpValue || otpValue.length !== 6) {
+      setOtpError("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    setOtpVerifying(true);
+    setOtpError('');
+
+    try {
+      const response = await fetch('/api/verify-otp-and-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: formData.whatsapp,
+          otp: otpValue,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setBookingConfirmed(true);
+        setConfirmedBooking(data.booking);
+
+        // Track appointment booked event
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'appointment_booked', {
+            event_category: 'booking',
+            event_label: `${trackingContext.pageSlug}_otp_booking`,
+            value: 0,
+            booking_mode: formData.modeOfContact,
+            booking_date: selectedDate,
+          });
+        }
+
+        await showAlert({
+          title: "Booking Confirmed!",
+          message: `Your appointment has been booked for ${data.booking.date} at ${data.booking.time}. You will receive confirmation on WhatsApp.`,
+          type: "success"
+        });
+      } else {
+        setOtpError(data.error || "Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      setOtpError("Failed to verify OTP. Please try again.");
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  const selectMode = (mode) => {
+    setFormData((prev) => ({
+      ...prev,
+      modeOfContact: mode.name,
+      modeId: mode._id,
+    }));
+    setSelectedSlot(null);
+    setShowSlots(false);
   };
 
   const areRequiredFieldsFilled = () => {
@@ -163,7 +337,7 @@ export default function BookingFormSection({
       formData.gender.trim() !== "" &&
       formData.email.trim() !== "" &&
       formData.whatsapp.trim() !== "" &&
-      formData.modeOfContact.trim() !== ""
+      formData.modeId !== ""
     );
   };
 
@@ -174,6 +348,12 @@ export default function BookingFormSection({
     return dateString === today;
   };
 
+  // Get display name for current mode
+  const getSelectedModeDisplayName = () => {
+    const mode = consultationModes.find(m => m._id === formData.modeId);
+    return mode?.displayName || formData.modeOfContact;
+  };
+
   const handleViewSlots = async () => {
     if (areRequiredFieldsFilled()) {
       setShowSlots(true);
@@ -182,7 +362,7 @@ export default function BookingFormSection({
 
       // Track slot view in database
       try {
-        console.log('📊 Tracking slot view...');
+        console.log('Tracking slot view...');
         const response = await fetch('/api/track-slot-view', {
           method: 'POST',
           headers: {
@@ -195,6 +375,7 @@ export default function BookingFormSection({
             email: formData.email,
             whatsapp: formData.whatsapp,
             modeOfContact: formData.modeOfContact,
+            modeId: formData.modeId,
             pageName: trackingContext.pageName,
             pageSlug: trackingContext.pageSlug,
             referrer: document.referrer || 'direct',
@@ -204,12 +385,12 @@ export default function BookingFormSection({
 
         const result = await response.json();
         if (result.success) {
-          console.log('✅ Slot view tracked successfully:', result.id);
+          console.log('Slot view tracked successfully:', result.id);
         } else {
-          console.error('❌ Failed to track slot view:', result.error);
+          console.error('Failed to track slot view:', result.error);
         }
       } catch (error) {
-        console.error('❌ Error tracking slot view:', error);
+        console.error('Error tracking slot view:', error);
         // Don't block the user flow if tracking fails
       }
 
@@ -245,15 +426,29 @@ export default function BookingFormSection({
     try {
       trackFormSubmit("Booking Form", {
         mode: formData.modeOfContact,
+        modeId: formData.modeId,
         date: selectedDate,
         time: selectedSlot.label,
+        paymentMode: paymentMode,
       });
 
+      // For no-payment mode, show OTP verification
+      if (paymentMode === 'no_payment') {
+        setShowOTP(true);
+        setIsSubmitting(false);
+        // Send OTP automatically
+        await sendOTP();
+        return;
+      }
+
+      // For payment mode, reserve slot and show payment button
       const response = await fetch("/api/reserve-slot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          mode: formData.modeOfContact,
+          modeId: formData.modeId,
           date: selectedDate,
           time: selectedSlot.time,
         }),
@@ -274,6 +469,7 @@ export default function BookingFormSection({
             date: selectedDate,
             time: selectedSlot.label,
             mode: formData.modeOfContact,
+            modeId: formData.modeId,
           })
         );
       } else {
@@ -432,64 +628,52 @@ export default function BookingFormSection({
               </div>
             </div>
 
-            {/* Mode of Consultation */}
+            {/* Mode of Consultation - Dynamic */}
             <div>
               <label className="block text-sm font-semibold text-primary-900 mb-2">
                 Mode of Consultation *
               </label>
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, modeOfContact: "online" }));
-                    setSelectedSlot(null);
-                    setShowSlots(false);
-                  }}
-                  className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
-                    formData.modeOfContact === "online"
-                      ? "bg-primary-600 text-white border-primary-600 shadow-md"
-                      : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span>Online Video Consult</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, modeOfContact: "in-clinic" }));
-                    setSelectedSlot(null);
-                    setShowSlots(false);
-                  }}
-                  className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
-                    formData.modeOfContact === "in-clinic"
-                      ? "bg-primary-600 text-white border-primary-600 shadow-md"
-                      : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                    <span>In-Clinic at Chembur</span>
-                  </div>
-                </button>
-              </div>
+              {isLoadingModes ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                </div>
+              ) : consultationModes.length === 0 ? (
+                <div className="text-center py-4 text-primary-600 text-sm">
+                  No consultation modes available at the moment.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {consultationModes.map((mode) => (
+                    <button
+                      key={mode._id}
+                      type="button"
+                      onClick={() => selectMode(mode)}
+                      className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
+                        formData.modeId === mode._id
+                          ? "text-white shadow-md"
+                          : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
+                      }`}
+                      style={formData.modeId === mode._id ? {
+                        backgroundColor: mode.color,
+                        borderColor: mode.color,
+                      } : {}}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: mode.color }}
+                        ></div>
+                        <span>{mode.displayName}</span>
+                      </div>
+                      {mode.description && (
+                        <p className="text-xs mt-1 opacity-75 text-left">
+                          {mode.description}
+                        </p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* View Slots Button */}
@@ -638,8 +822,119 @@ export default function BookingFormSection({
               </>
             )}
 
-            {/* Submit or Payment */}
-            {!showPayment ? (
+            {/* Submit or Payment/OTP */}
+            {bookingConfirmed ? (
+              /* Booking Confirmation */
+              <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-6 md:p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-green-800 mb-2">
+                  Booking Confirmed!
+                </h3>
+                <p className="text-green-700 mb-4">
+                  Your appointment has been successfully booked.
+                </p>
+                {confirmedBooking && (
+                  <div className="bg-white rounded-lg p-4 text-left space-y-2 mb-4">
+                    <p className="text-sm"><strong>Date:</strong> {confirmedBooking.date}</p>
+                    <p className="text-sm"><strong>Time:</strong> {confirmedBooking.time}</p>
+                    <p className="text-sm"><strong>Mode:</strong> {getSelectedModeDisplayName()}</p>
+                    {confirmedBooking.meetLink && (
+                      <p className="text-sm">
+                        <strong>Meet Link:</strong>{" "}
+                        <a href={confirmedBooking.meetLink} target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
+                          Join Meeting
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                )}
+                <p className="text-sm text-green-600">
+                  You will receive a confirmation message on WhatsApp shortly.
+                </p>
+              </div>
+            ) : showOTP ? (
+              /* OTP Verification for No-Payment Mode */
+              <div className="space-y-4">
+                <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
+                  <p className="text-sm font-semibold text-primary-900 mb-2">
+                    Verify Your WhatsApp Number
+                  </p>
+                  <p className="text-xs text-primary-600 mb-4">
+                    An OTP has been sent to +91 {formData.whatsapp}
+                  </p>
+
+                  {/* OTP Input */}
+                  <div className="max-w-xs mx-auto mb-4">
+                    <input
+                      type="text"
+                      value={otpValue}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setOtpValue(value);
+                        setOtpError('');
+                      }}
+                      placeholder="Enter 6-digit OTP"
+                      className="w-full px-4 py-3 text-center text-2xl tracking-widest border-2 border-primary-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500"
+                      maxLength={6}
+                    />
+                  </div>
+
+                  {/* OTP Error */}
+                  {otpError && (
+                    <p className="text-sm text-red-600 mb-4">{otpError}</p>
+                  )}
+
+                  {/* OTP Countdown */}
+                  {otpCountdown > 0 && (
+                    <p className="text-xs text-primary-600 mb-4">
+                      OTP expires in {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, "0")}
+                    </p>
+                  )}
+
+                  {/* Verify Button */}
+                  <button
+                    type="button"
+                    onClick={verifyOTP}
+                    disabled={otpVerifying || otpValue.length !== 6}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    {otpVerifying ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Verifying...
+                      </>
+                    ) : (
+                      "VERIFY & CONFIRM BOOKING"
+                    )}
+                  </button>
+
+                  {/* Resend OTP */}
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={sendOTP}
+                      disabled={otpSending || otpCountdown > 0}
+                      className="text-sm text-primary-600 hover:text-primary-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {otpSending ? "Sending..." : otpCountdown > 0 ? `Resend in ${Math.floor(otpCountdown / 60)}:${String(otpCountdown % 60).padStart(2, "0")}` : "Resend OTP"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selected Slot Info */}
+                <div className="bg-gray-50 rounded-lg p-4 text-sm">
+                  <p><strong>Selected Slot:</strong> {selectedDate} at {selectedSlot?.label}</p>
+                  <p><strong>Mode:</strong> {getSelectedModeDisplayName()}</p>
+                </div>
+              </div>
+            ) : !showPayment ? (
               <>
                 <button
                   type="submit"
@@ -680,24 +975,49 @@ export default function BookingFormSection({
                   )}
                 </button>
 
-                {/* Terms */}
+                {/* Terms - Different for payment vs no-payment mode */}
                 <div className="mt-4 md:mt-6 bg-beige-50 rounded-2xl p-4 md:p-6 border-2 border-primary-200">
                   <h3 className="text-base md:text-lg font-bold text-primary-900 mb-3 md:mb-4">
                     Terms of Booking:
                   </h3>
                   <div className="space-y-2 md:space-y-3 text-xs md:text-sm text-primary-800">
-                    <p className="flex items-start gap-2">
-                      <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
-                      <span>
-                        This payment is a <strong>non-refundable commitment fee</strong>. The amount paid now will be fully adjusted against your final consultation fee at the time of the visit.
-                      </span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
-                      <span>
-                        <strong>Rescheduling:</strong> We understand plans change. You can request a reschedule via WhatsApp at least 2 hours before your slot.
-                      </span>
-                    </p>
+                    {paymentMode === 'payment' ? (
+                      <>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
+                          <span>
+                            This payment is a <strong>non-refundable commitment fee</strong>. The amount paid now will be fully adjusted against your final consultation fee at the time of the visit.
+                          </span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
+                          <span>
+                            <strong>Rescheduling:</strong> We understand plans change. You can request a reschedule via WhatsApp at least 2 hours before your slot.
+                          </span>
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
+                          <span>
+                            You will receive an <strong>OTP on WhatsApp</strong> to verify your number and confirm the booking.
+                          </span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
+                          <span>
+                            <strong>Consultation Fee:</strong> ₹{consultationFee}/- to be paid at the time of consultation.
+                          </span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
+                          <span>
+                            <strong>Rescheduling:</strong> You can request a reschedule via WhatsApp at least 2 hours before your slot.
+                          </span>
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </>
