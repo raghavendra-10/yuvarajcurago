@@ -22,8 +22,7 @@ const TimeSlotSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for sorting by time
-TimeSlotSchema.index({ time: 1 });
+// Index for active slots (time index already created by unique: true)
 TimeSlotSchema.index({ isActive: 1, time: 1 });
 
 // Static method to convert 24h time to 12h label
