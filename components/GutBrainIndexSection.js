@@ -18,7 +18,7 @@ const RazorpayButton = () => {
 
   return <form ref={formRef}></form>;
 };
-
+ 
 export default function GutBrainIndexSection() {
 
   return (
