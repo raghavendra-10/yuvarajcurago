@@ -40,7 +40,7 @@ export default function ScheduleConfirmation() {
             It looks like you haven't made a booking yet.
           </p>
           <Link
-            href="/myclinic"
+            href="/"
             className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
           >
             Book Consultation

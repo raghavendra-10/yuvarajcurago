@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 const DAYS = [
   { id: 1, name: "Monday", short: "Mon" },
@@ -24,6 +25,7 @@ export default function WeeklySchedulePage() {
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
   const [availableToCreate, setAvailableToCreate] = useState([]);
   const [newSlotTime, setNewSlotTime] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchModes();
@@ -38,21 +40,39 @@ export default function WeeklySchedulePage() {
 
   const fetchModes = async () => {
     try {
-      const response = await fetch("/api/admin/consultation-modes");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/admin/consultation-modes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await response.json();
       if (data.success && data.modes.length > 0) {
         setModes(data.modes);
         setSelectedMode(data.modes[0]);
+      } else {
+        // No modes found, stop loading
+        setIsLoading(false);
       }
     } catch (err) {
       console.error("Error fetching modes:", err);
       setError("Failed to fetch consultation modes");
+      setIsLoading(false);
     }
   };
 
   const fetchTimeSlots = async () => {
     try {
-      const response = await fetch("/api/admin/time-slots?all=true");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/admin/time-slots?all=true", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setTimeSlots(data.slots);
@@ -68,7 +88,14 @@ export default function WeeklySchedulePage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/admin/weekly-schedule?modeId=${selectedMode._id}`);
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/admin/weekly-schedule?modeId=${selectedMode._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await response.json();
 
       if (data.success) {
@@ -95,9 +122,13 @@ export default function WeeklySchedulePage() {
     setIsSaving(true);
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/weekly-schedule", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           modeId: selectedMode._id,
           dayOfWeek,
@@ -130,9 +161,13 @@ export default function WeeklySchedulePage() {
     setIsSaving(true);
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/weekly-schedule", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           modeId: selectedMode._id,
           dayOfWeek,
@@ -168,9 +203,13 @@ export default function WeeklySchedulePage() {
     if (!newSlotTime) return;
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/time-slots", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ time: newSlotTime }),
       });
 
@@ -194,8 +233,10 @@ export default function WeeklySchedulePage() {
     if (!confirm(`Delete this time slot? It will be removed from all schedules.`)) return;
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/time-slots?time=${encodeURIComponent(time)}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
@@ -218,15 +259,60 @@ export default function WeeklySchedulePage() {
     return schedule[dayOfWeek]?.isEnabled ?? false;
   };
 
-  // Filter active time slots
-  const activeTimeSlots = timeSlots.filter((slot) => slot.isActive);
+  const resetAllTimeSlots = async () => {
+    if (!confirm("Reset all time slots to full 24 hours? This will remove all current time slots and create slots from 12:00 AM to 11:30 PM.")) return;
+
+    setIsResetting(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/admin/time-slots/reset", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(data.message);
+        setTimeout(() => setSuccess(""), 3000);
+        fetchTimeSlots();
+        fetchSchedule();
+      } else {
+        setError(data.error || "Failed to reset time slots");
+      }
+    } catch (err) {
+      console.error("Error resetting slots:", err);
+      setError("Failed to reset time slots");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  // Show all time slots (not just active ones)
+  const activeTimeSlots = timeSlots;
 
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Weekly Schedule</h1>
-        <p className="text-gray-600 mt-1">Configure available slots for each consultation mode</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Weekly Schedule</h1>
+          <p className="text-gray-600 mt-1">Configure available slots for each consultation mode</p>
+        </div>
+        <div className="flex gap-2 mt-4 md:mt-0">
+          <Link
+            href="/admin/dashboard/modes"
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium text-sm"
+          >
+            Manage Modes
+          </Link>
+          <button
+            onClick={resetAllTimeSlots}
+            disabled={isResetting}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium text-sm disabled:opacity-50"
+          >
+            {isResetting ? "Resetting..." : "Reset Time Slots"}
+          </button>
+        </div>
       </div>
 
       {/* Mode Selector */}
@@ -272,13 +358,13 @@ export default function WeeklySchedulePage() {
       {/* No modes message */}
       {modes.length === 0 && !isLoading && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <p className="text-yellow-800 mb-2">No consultation modes found.</p>
-          <a
+          <p className="text-yellow-800 mb-4">No consultation modes found.</p>
+          <Link
             href="/admin/dashboard/modes"
-            className="text-blue-600 hover:underline font-medium"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium inline-block"
           >
-            Create your first mode →
-          </a>
+            Create Your First Mode
+          </Link>
         </div>
       )}
 

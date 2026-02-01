@@ -1,31 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import { isAuthenticated } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import ForumPost from "@/models/ForumPost";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-
-// Verify admin authentication
-async function isAuthenticated() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin_token");
-
-    if (!token) {
-      return false;
-    }
-
-    const decoded = jwt.verify(token.value, JWT_SECRET);
-    return decoded.role === "admin";
-  } catch (error) {
-    return false;
-  }
-}
-
 // GET - Get all forum posts for admin
 export async function GET(request) {
-  if (!(await isAuthenticated())) {
+  if (!isAuthenticated(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

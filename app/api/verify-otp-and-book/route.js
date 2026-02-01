@@ -4,6 +4,7 @@ import OTP from "@/models/OTP";
 import Booking from "@/models/Booking";
 import { isSlotBooked } from "@/lib/slotManagerDB";
 import { createCalendarEvent } from "@/lib/googleCalendar";
+import { validatePhone } from "@/lib/validation";
 
 export async function POST(request) {
   try {
@@ -16,12 +17,26 @@ export async function POST(request) {
       );
     }
 
-    const cleanPhone = phone.replace(/\D/g, '');
+    // Validate phone format
+    const phoneValidation = validatePhone(phone);
+    if (!phoneValidation.valid) {
+      return NextResponse.json({ error: phoneValidation.error }, { status: 400 });
+    }
+    const cleanPhone = phoneValidation.cleanPhone;
+
+    // Validate OTP format (should be 6 digits)
+    const cleanOtp = otp.toString().replace(/\D/g, '');
+    if (cleanOtp.length !== 6) {
+      return NextResponse.json(
+        { error: "OTP must be 6 digits" },
+        { status: 400 }
+      );
+    }
 
     await connectDB();
 
     // Verify OTP
-    const result = await OTP.verifyOTP(cleanPhone, otp);
+    const result = await OTP.verifyOTP(cleanPhone, cleanOtp);
 
     if (!result.success) {
       return NextResponse.json(
@@ -45,8 +60,8 @@ export async function POST(request) {
       );
     }
 
-    // Create calendar event
-    let calendarEvent = { success: false };
+    // Create calendar event (required for booking confirmation)
+    let calendarEvent;
     try {
       calendarEvent = await createCalendarEvent({
         date: bookingData.date,
@@ -56,9 +71,20 @@ export async function POST(request) {
         whatsapp: bookingData.whatsapp,
         mode: bookingData.modeOfContact,
       });
+
+      if (!calendarEvent || !calendarEvent.success) {
+        console.error("Calendar event creation returned failure");
+        return NextResponse.json(
+          { error: "Failed to create calendar event. Please try again or contact support." },
+          { status: 500 }
+        );
+      }
     } catch (calendarError) {
       console.error("Calendar event creation failed:", calendarError);
-      // Continue with booking even if calendar fails
+      return NextResponse.json(
+        { error: "Failed to create calendar event. Please try again or contact support." },
+        { status: 500 }
+      );
     }
 
     // Create booking in database

@@ -171,7 +171,7 @@ function PaymentStatusHandler() {
             </h1>
             <p className="text-primary-700 mb-6">{message}</p>
             <button
-              onClick={() => router.replace("/myclinic")}
+              onClick={() => router.replace("/")}
               className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
             >
               Try Again

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import OTP from "@/models/OTP";
+import {
+  validatePhone,
+  validateEmail,
+  validateDate,
+  validateTime,
+} from "@/lib/validation";
 
 const WYLTO_API_KEY = process.env.WYLTO_OTP_API_KEY;
 const WYLTO_API_URL = "https://server.wylto.com/api/v1/wa/send?sync=true";
@@ -31,22 +37,38 @@ export async function POST(request) {
     }
 
     // Validate phone number format
-    const phone = whatsapp.replace(/\D/g, '');
-    if (phone.length !== 10) {
-      return NextResponse.json(
-        { error: "Invalid phone number" },
-        { status: 400 }
-      );
+    const phoneValidation = validatePhone(whatsapp);
+    if (!phoneValidation.valid) {
+      return NextResponse.json({ error: phoneValidation.error }, { status: 400 });
+    }
+    const phone = phoneValidation.cleanPhone;
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return NextResponse.json({ error: emailValidation.error }, { status: 400 });
+    }
+
+    // Validate date
+    const dateValidation = validateDate(date);
+    if (!dateValidation.valid) {
+      return NextResponse.json({ error: dateValidation.error }, { status: 400 });
+    }
+
+    // Validate time
+    const timeValidation = validateTime(time);
+    if (!timeValidation.valid) {
+      return NextResponse.json({ error: timeValidation.error }, { status: 400 });
     }
 
     await connectDB();
 
     // Generate and store OTP
     const bookingData = {
-      name,
-      age: parseInt(age),
+      name: name.trim(),
+      age: parseInt(age, 10),
       gender,
-      email,
+      email: email.toLowerCase().trim(),
       whatsapp: phone,
       modeOfContact,
       modeId,

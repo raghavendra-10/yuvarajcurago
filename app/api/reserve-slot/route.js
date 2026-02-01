@@ -4,6 +4,13 @@ import {
   isSlotBooked,
   releaseExpiredReservations,
 } from "@/lib/slotManagerDB";
+import {
+  validateBookingData,
+  validatePhone,
+  validateEmail,
+  validateDate,
+  validateTime,
+} from "@/lib/validation";
 
 export async function POST(request) {
   try {
@@ -21,6 +28,27 @@ export async function POST(request) {
       );
     }
 
+    // Validate input formats
+    const phoneValidation = validatePhone(whatsapp);
+    if (!phoneValidation.valid) {
+      return NextResponse.json({ error: phoneValidation.error }, { status: 400 });
+    }
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return NextResponse.json({ error: emailValidation.error }, { status: 400 });
+    }
+
+    const dateValidation = validateDate(date);
+    if (!dateValidation.valid) {
+      return NextResponse.json({ error: dateValidation.error }, { status: 400 });
+    }
+
+    const timeValidation = validateTime(time);
+    if (!timeValidation.valid) {
+      return NextResponse.json({ error: timeValidation.error }, { status: 400 });
+    }
+
     // Check if slot is already booked or reserved
     const isBooked = await isSlotBooked(date, time);
     if (isBooked) {
@@ -32,11 +60,11 @@ export async function POST(request) {
 
     // Create temporary reservation (10-minute hold)
     const reservation = await createReservation({
-      name,
-      age,
+      name: name.trim(),
+      age: parseInt(age, 10),
       gender,
-      whatsapp: `+91${whatsapp}`,
-      email,
+      whatsapp: `+91${phoneValidation.cleanPhone}`,
+      email: email.toLowerCase().trim(),
       mode: modeOfContact,
       modeId,
       date,

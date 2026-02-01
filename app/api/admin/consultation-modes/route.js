@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
+import { isAuthenticated } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import ConsultationMode from "@/models/ConsultationMode";
 import WeeklySchedule from "@/models/WeeklySchedule";
 import Booking from "@/models/Booking";
+import { initializeDefaultModes } from "@/lib/slotManagerDB";
 
 // GET - List all consultation modes
 export async function GET(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     await connectDB();
+
+    // Initialize default modes if none exist
+    await initializeDefaultModes();
 
     const modes = await ConsultationMode.find()
       .sort({ sortOrder: 1, createdAt: 1 });
@@ -27,6 +36,10 @@ export async function GET(request) {
 
 // POST - Create a new consultation mode
 export async function POST(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { name, displayName, description, color } = await request.json();
 
@@ -88,6 +101,10 @@ export async function POST(request) {
 
 // PATCH - Update an existing consultation mode
 export async function PATCH(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id, displayName, description, color, isActive, sortOrder } = await request.json();
 
@@ -133,6 +150,10 @@ export async function PATCH(request) {
 
 // DELETE - Delete a consultation mode
 export async function DELETE(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

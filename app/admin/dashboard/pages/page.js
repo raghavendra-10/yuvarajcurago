@@ -43,6 +43,11 @@ export default function BookingPagesListPage() {
         },
       });
 
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to fetch pages");
       }

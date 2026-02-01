@@ -30,6 +30,10 @@ export default function BookingsPage() {
       const response = await fetch('/api/admin/slots', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         // Sort bookings by date and time (newest first)

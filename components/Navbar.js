@@ -12,9 +12,8 @@ export default function Navbar() {
     { name: "Services", href: "/services" },
     { name: "Blog", href: "/blog" },
     { name: "Forum", href: "/#community" },
-    { name: "My Clinic", href: "/myclinic" },
-    { name: "Priority Connect", href: "/priority-connect" },
-    { name: "About", href: "/#about-doctor" },
+    { name: "GBSI", href: "/gbsi" },
+    { name: "About", href: "/about" },
     { name: "Contact", href: "#contact" },
   ];
 

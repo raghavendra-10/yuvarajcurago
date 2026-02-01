@@ -80,6 +80,7 @@ export default function ForumSection() {
         });
         setFormData({ name: "", email: "", query: "", category: "general" });
         setShowForm(false);
+        fetchPosts(); // Refresh the posts list to show the new question
       } else {
         setMessage({ type: "error", text: data.error || "Failed to submit query" });
       }

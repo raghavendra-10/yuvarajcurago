@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAuthenticated } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import WeeklySchedule from "@/models/WeeklySchedule";
 import ConsultationMode from "@/models/ConsultationMode";
@@ -6,6 +7,10 @@ import TimeSlot from "@/models/TimeSlot";
 
 // GET - Get weekly schedule (optionally filtered by modeId)
 export async function GET(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const modeId = searchParams.get("modeId");
@@ -58,6 +63,10 @@ export async function GET(request) {
 
 // POST - Update weekly schedule for a specific mode + day
 export async function POST(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { modeId, dayOfWeek, isEnabled, enabledSlots } = await request.json();
 
@@ -113,6 +122,10 @@ export async function POST(request) {
 
 // PATCH - Bulk update: Toggle a slot for a specific day/mode
 export async function PATCH(request) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { modeId, dayOfWeek, slotTime, enabled } = await request.json();
 

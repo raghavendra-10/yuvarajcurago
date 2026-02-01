@@ -34,7 +34,14 @@ export default function ModesPage() {
   const fetchModes = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/admin/consultation-modes");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/admin/consultation-modes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setModes(data.modes);
@@ -76,11 +83,15 @@ export default function ModesPage() {
     setError("");
 
     try {
+      const token = localStorage.getItem('adminToken');
       if (editingMode) {
         // Update existing mode
         const response = await fetch("/api/admin/consultation-modes", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({
             id: editingMode._id,
             displayName: formData.displayName,
@@ -100,7 +111,10 @@ export default function ModesPage() {
         // Create new mode
         const response = await fetch("/api/admin/consultation-modes", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(formData),
         });
 
@@ -124,9 +138,13 @@ export default function ModesPage() {
 
   const toggleModeStatus = async (mode) => {
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/consultation-modes", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           id: mode._id,
           isActive: !mode.isActive,
@@ -150,8 +168,10 @@ export default function ModesPage() {
     }
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/consultation-modes?id=${mode._id}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();

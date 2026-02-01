@@ -36,7 +36,14 @@ export default function ForumPage() {
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch('/api/admin/forum');
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/admin/forum', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
       const data = await response.json();
       if (data.success) {
         setPosts(data.posts);
@@ -129,9 +136,13 @@ export default function ForumPage() {
 
     setReplying(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${selectedPost._id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           action: 'reply',
           reply: replyText,
@@ -170,9 +181,13 @@ export default function ForumPage() {
 
   const handleStatusChange = async (postId, newStatus) => {
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${postId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -191,9 +206,13 @@ export default function ForumPage() {
 
   const handleVisibilityToggle = async (postId, isPublic) => {
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${postId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ isPublic }),
       });
 
@@ -222,8 +241,10 @@ export default function ForumPage() {
     if (!confirmed) return;
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${postId}`, {
         method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
@@ -403,12 +424,18 @@ export default function ForumPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(post.createdAt)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
                       <button
                         onClick={() => setSelectedPost(post)}
                         className="text-blue-600 hover:text-blue-700 font-medium"
                       >
                         View & Reply
+                      </button>
+                      <button
+                        onClick={() => handleDelete(post._id)}
+                        className="text-red-600 hover:text-red-700 font-medium"
+                      >
+                        Delete
                       </button>
                     </td>
                   </tr>
@@ -447,12 +474,20 @@ export default function ForumPage() {
                 )}
               </div>
 
-              <button
-                onClick={() => setSelectedPost(post)}
-                className="w-full text-center py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                View & Reply
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedPost(post)}
+                  className="flex-1 text-center py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  View & Reply
+                </button>
+                <button
+                  onClick={() => handleDelete(post._id)}
+                  className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))
         )}

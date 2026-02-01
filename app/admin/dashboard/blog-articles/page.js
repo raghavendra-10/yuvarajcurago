@@ -32,6 +32,11 @@ export default function BlogArticlesPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      if (response.status === 401) {
+        window.location.href = '/admin';
+        return;
+      }
+
       const data = await response.json();
       if (data.articles) {
         setArticles(data.articles);

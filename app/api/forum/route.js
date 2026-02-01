@@ -13,10 +13,10 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get("limit")) || 10;
     const skip = (page - 1) * limit;
 
-    // Build query - only show public posts with replies
+    // Build query - show public posts (both pending and replied)
     const query = {
       isPublic: true,
-      status: 'replied',
+      status: { $in: ['pending', 'replied'] },
     };
 
     if (category && category !== 'all') {
