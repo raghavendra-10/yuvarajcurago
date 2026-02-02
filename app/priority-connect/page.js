@@ -45,21 +45,7 @@ export default function PriorityConnectPage() {
           <div className="max-w-4xl mx-auto">
             {/* Hero Section */}
             <div className="text-center mb-10">
-              <div className="w-20 h-20 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-primary-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              </div>
+              
               <h1 className="text-3xl md:text-4xl font-bold text-primary-900 mb-3">
                 Priority Connect
               </h1>
