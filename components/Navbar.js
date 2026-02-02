@@ -1,21 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showMyClinicDropdown, setShowMyClinicDropdown] = useState(false);
+  const [showMobileMyClinic, setShowMobileMyClinic] = useState(false);
+  const myClinicRef = useRef(null);
+
+  const clinics = [
+    { name: "Gallbladder Clinic", href: "/myclinic/gallbladder-clinic" },
+    { name: "IBS Clinic", href: "/myclinic/ibs-clinic" },
+    { name: "Second Opinion Clinic", href: "/myclinic/second-opinion-clinic" },
+    { name: "Online Clinic", href: "/myclinic/online-clinic" },
+  ];
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Services", href: "/services" },
+    { name: "My Clinic", href: "/myclinic", hasDropdown: true },
+    { name: "GBSI", href: "/gbsi" },
+    { name: "Priority Connect", href: "/priority-connect" },
     { name: "Blog", href: "/blog" },
     { name: "Forum", href: "/#community" },
-    { name: "GBSI", href: "/gbsi" },
     { name: "About", href: "/about" },
-    { name: "Contact", href: "#contact" },
   ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (myClinicRef.current && !myClinicRef.current.contains(event.target)) {
+        setShowMyClinicDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-beige-300/90 backdrop-blur-xl border-b border-primary-200/50 shadow-sm">
@@ -41,13 +63,54 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="px-4 py-2 text-primary-800 hover:text-primary-600 font-medium rounded-lg hover:bg-accent-100 transition-all duration-300"
-              >
-                {link.name}
-              </Link>
+              link.hasDropdown ? (
+                <div key={link.name} className="relative" ref={myClinicRef}>
+                  <button
+                    onClick={() => setShowMyClinicDropdown(!showMyClinicDropdown)}
+                    className="px-4 py-2 text-primary-800 hover:text-primary-600 font-medium rounded-lg hover:bg-accent-100 transition-all duration-300 flex items-center gap-1"
+                  >
+                    {link.name}
+                    <svg
+                      className={`w-4 h-4 transition-transform ${showMyClinicDropdown ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showMyClinicDropdown && (
+                    <div className="absolute top-full left-0 mt-1 bg-white border border-primary-200 rounded-lg shadow-xl py-2 min-w-[200px] z-50">
+                      <Link
+                        href={link.href}
+                        onClick={() => setShowMyClinicDropdown(false)}
+                        className="block px-4 py-2 text-primary-800 hover:bg-accent-100 font-medium"
+                      >
+                        All Clinics
+                      </Link>
+                      <div className="border-t border-primary-100 my-1"></div>
+                      {clinics.map((clinic) => (
+                        <Link
+                          key={clinic.name}
+                          href={clinic.href}
+                          onClick={() => setShowMyClinicDropdown(false)}
+                          className="block px-4 py-2 text-primary-700 hover:bg-accent-100 hover:text-primary-900 transition-colors"
+                        >
+                          {clinic.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="px-4 py-2 text-primary-800 hover:text-primary-600 font-medium rounded-lg hover:bg-accent-100 transition-all duration-300"
+                >
+                  {link.name}
+                </Link>
+              )
             ))}
           </div>
 
@@ -84,14 +147,54 @@ export default function Navbar() {
           <div className="md:hidden py-4 border-t border-primary-200">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setIsOpen(false)}
-                  className="px-4 py-3 text-primary-800 hover:text-primary-600 hover:bg-accent-100 rounded-lg font-medium transition-all duration-300"
-                >
-                  {link.name}
-                </Link>
+                link.hasDropdown ? (
+                  <div key={link.name}>
+                    <button
+                      onClick={() => setShowMobileMyClinic(!showMobileMyClinic)}
+                      className="w-full px-4 py-3 text-primary-800 hover:text-primary-600 hover:bg-accent-100 rounded-lg font-medium transition-all duration-300 flex items-center justify-between"
+                    >
+                      {link.name}
+                      <svg
+                        className={`w-4 h-4 transition-transform ${showMobileMyClinic ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showMobileMyClinic && (
+                      <div className="ml-4 mt-1 space-y-1">
+                        <Link
+                          href={link.href}
+                          onClick={() => { setIsOpen(false); setShowMobileMyClinic(false); }}
+                          className="block px-4 py-2 text-primary-700 hover:bg-accent-100 rounded-lg"
+                        >
+                          All Clinics
+                        </Link>
+                        {clinics.map((clinic) => (
+                          <Link
+                            key={clinic.name}
+                            href={clinic.href}
+                            onClick={() => { setIsOpen(false); setShowMobileMyClinic(false); }}
+                            className="block px-4 py-2 text-primary-600 hover:bg-accent-100 rounded-lg"
+                          >
+                            {clinic.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setIsOpen(false)}
+                    className="px-4 py-3 text-primary-800 hover:text-primary-600 hover:bg-accent-100 rounded-lg font-medium transition-all duration-300"
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
               <a
                 href="https://wa.me/917021227203?text=Hi%2C%20I%20need%20to%20book%20an%20online%20consultation%20with%20Dr.%20Yuvaraj%2C%20please%20guide%20me"

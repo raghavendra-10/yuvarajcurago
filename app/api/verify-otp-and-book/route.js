@@ -145,6 +145,10 @@ export async function POST(request) {
         mode: bookingData.modeOfContact,
         meetLink: calendarEvent.meetLink || null,
         calendarEventUrl: calendarEvent.htmlLink || null,
+        // Additional data for event tracking
+        phone: bookingData.whatsapp,
+        email: bookingData.email,
+        eventId: calendarEvent.eventId || booking._id.toString(),
       },
     });
 

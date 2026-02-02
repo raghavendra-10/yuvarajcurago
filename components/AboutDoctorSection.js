@@ -4,8 +4,8 @@ import Image from "next/image";
 export default function AboutDoctorSection() {
   const credentials = [
     {
-      title: "Training",
-      value: "KEM Hospital Mumbai",
+      title: "Qualification",
+      value: "MS, MCh, FMAS, FACRSI",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -76,7 +76,7 @@ export default function AboutDoctorSection() {
 
           <div className="space-y-4 mb-8">
             <p className="text-lg text-primary-800 leading-relaxed">
-              I am Dr Yuvaraj T, a <strong>Surgical Gastroenterologist</strong> trained from KEM Hospital Mumbai and currently based in Mumbai.
+              I am Dr Yuvaraj T, a <strong>Surgical Gastroenterologist</strong> currently based in Mumbai.
             </p>
 
             <p className="text-lg text-primary-800 leading-relaxed">

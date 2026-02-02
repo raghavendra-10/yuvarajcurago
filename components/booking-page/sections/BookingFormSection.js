@@ -285,15 +285,38 @@ export default function BookingFormSection({
         setBookingConfirmed(true);
         setConfirmedBooking(data.booking);
 
-        // Track appointment booked event
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'appointment_booked', {
+        // Track appointment booked event with full data for GTM/Pixel
+        if (typeof window !== 'undefined') {
+          // Push to dataLayer for GTM
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({
+            event: 'appointment_booked',
             event_category: 'booking',
             event_label: `${trackingContext.pageSlug}_otp_booking`,
-            value: 0,
+            phone: data.booking.phone || formData.whatsapp,
+            email: data.booking.email || formData.email,
+            event_id: data.booking.eventId,
+            booking_id: data.booking.id,
             booking_mode: formData.modeOfContact,
             booking_date: selectedDate,
+            booking_time: selectedSlot?.time,
+            page_slug: trackingContext.pageSlug,
+            page_name: trackingContext.pageName,
           });
+
+          // Also fire gtag event
+          if (window.gtag) {
+            window.gtag('event', 'appointment_booked', {
+              event_category: 'booking',
+              event_label: `${trackingContext.pageSlug}_otp_booking`,
+              value: 0,
+              booking_mode: formData.modeOfContact,
+              booking_date: selectedDate,
+              phone: data.booking.phone || formData.whatsapp,
+              email: data.booking.email || formData.email,
+              event_id: data.booking.eventId,
+            });
+          }
         }
 
         await showAlert({

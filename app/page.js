@@ -495,8 +495,51 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Specialized Clinics Section */}
+      <section className="bg-beige-50 py-6 md:py-8">
+        <div className="container mx-auto px-4">
+          <h2 className="text-lg md:text-xl font-bold text-primary-600 text-center mb-4">
+            Our Specialized Clinics
+          </h2>
+          <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+            <a
+              href="/myclinic/gallbladder-clinic"
+              onClick={() => trackButtonClick('Gallbladder Clinic', 'home_clinic_button')}
+              className="flex items-center gap-2 bg-white border-2 border-green-200 hover:border-green-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
+            >
+              <span className="w-3 h-3 rounded-full bg-green-500"></span>
+              Gallbladder Clinic
+            </a>
+            <a
+              href="/myclinic/ibs-clinic"
+              onClick={() => trackButtonClick('IBS Clinic', 'home_clinic_button')}
+              className="flex items-center gap-2 bg-white border-2 border-blue-200 hover:border-blue-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
+            >
+              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+              IBS Clinic
+            </a>
+            <a
+              href="/myclinic/second-opinion-clinic"
+              onClick={() => trackButtonClick('Second Opinion Clinic', 'home_clinic_button')}
+              className="flex items-center gap-2 bg-white border-2 border-purple-200 hover:border-purple-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
+            >
+              <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+              Second Opinion Clinic
+            </a>
+            <a
+              href="/myclinic/online-clinic"
+              onClick={() => trackButtonClick('Online Clinic', 'home_clinic_button')}
+              className="flex items-center gap-2 bg-white border-2 border-orange-200 hover:border-orange-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
+            >
+              <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+              Online Clinic
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Booking Form Section */}
-      <section className="container mx-auto px-4 md:px-6 py-4 md:py-12 lg:py-16">
+      <section id="booking" className="container mx-auto px-4 md:px-6 py-4 md:py-12 lg:py-16">
         <div className="max-w-4xl lg:max-w-5xl mx-auto">
           {/* Book Your Slot Header */}
           <div className="text-center mb-3 md:mb-6">

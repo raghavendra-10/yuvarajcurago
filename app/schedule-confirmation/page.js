@@ -235,7 +235,7 @@ export default function ScheduleConfirmation() {
                 If you face any difficulties or need to reschedule, reach out to our team immediately.
               </p>
               <a
-                href="https://wa.me/917021227203?text=Hi%2C%20I%20have%20booked%20a%20consultation%20via%20CuraGo.%20Please%20guide%20me%20with%20the%20next%20steps."
+                href="https://wa.me/918369743571?text=Hi%2C%20I%20have%20booked%20a%20consultation%20via%20CuraGo.%20Please%20guide%20me%20with%20the%20next%20steps."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
