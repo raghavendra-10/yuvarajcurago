@@ -8,14 +8,31 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showMyClinicDropdown, setShowMyClinicDropdown] = useState(false);
   const [showMobileMyClinic, setShowMobileMyClinic] = useState(false);
+  const [clinics, setClinics] = useState([]);
+  const [clinicsLoading, setClinicsLoading] = useState(true);
   const myClinicRef = useRef(null);
 
-  const clinics = [
-    { name: "Gallbladder Clinic", href: "/myclinic/gallbladder-clinic" },
-    { name: "IBS Clinic", href: "/myclinic/ibs-clinic" },
-    { name: "Second Opinion Clinic", href: "/myclinic/second-opinion-clinic" },
-    { name: "Online Clinic", href: "/myclinic/online-clinic" },
-  ];
+  // Fetch clinics from API
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        setClinicsLoading(true);
+        const response = await fetch('/api/clinics?navbar=true');
+        const data = await response.json();
+        if (data.success && data.clinics.length > 0) {
+          setClinics(data.clinics.map(clinic => ({
+            name: clinic.name,
+            href: clinic.href,
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch clinics for navbar:', error);
+      } finally {
+        setClinicsLoading(false);
+      }
+    };
+    fetchClinics();
+  }, []);
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -88,17 +105,24 @@ export default function Navbar() {
                       >
                         All Clinics
                       </Link>
-                      <div className="border-t border-primary-100 my-1"></div>
-                      {clinics.map((clinic) => (
-                        <Link
-                          key={clinic.name}
-                          href={clinic.href}
-                          onClick={() => setShowMyClinicDropdown(false)}
-                          className="block px-4 py-2 text-primary-700 hover:bg-accent-100 hover:text-primary-900 transition-colors"
-                        >
-                          {clinic.name}
-                        </Link>
-                      ))}
+                      {clinics.length > 0 && (
+                        <>
+                          <div className="border-t border-primary-100 my-1"></div>
+                          {clinics.map((clinic) => (
+                            <Link
+                              key={clinic.href}
+                              href={clinic.href}
+                              onClick={() => setShowMyClinicDropdown(false)}
+                              className="block px-4 py-2 text-primary-700 hover:bg-accent-100 hover:text-primary-900 transition-colors"
+                            >
+                              {clinic.name}
+                            </Link>
+                          ))}
+                        </>
+                      )}
+                      {clinicsLoading && (
+                        <div className="px-4 py-2 text-primary-500 text-sm">Loading...</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -174,7 +198,7 @@ export default function Navbar() {
                         </Link>
                         {clinics.map((clinic) => (
                           <Link
-                            key={clinic.name}
+                            key={clinic.href}
                             href={clinic.href}
                             onClick={() => { setIsOpen(false); setShowMobileMyClinic(false); }}
                             className="block px-4 py-2 text-primary-600 hover:bg-accent-100 rounded-lg"
@@ -182,6 +206,9 @@ export default function Navbar() {
                             {clinic.name}
                           </Link>
                         ))}
+                        {clinicsLoading && (
+                          <div className="px-4 py-2 text-primary-500 text-sm">Loading...</div>
+                        )}
                       </div>
                     )}
                   </div>

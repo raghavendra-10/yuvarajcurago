@@ -61,6 +61,39 @@ const BookingPageSchema = new mongoose.Schema({
     type: String,
     trim: true,
   }],
+  // Display fields for navbar and homepage clinic cards
+  category: {
+    type: String,
+    enum: ['myclinic', 'gbsi', 'other'],
+    default: 'other',
+  },
+  displayName: {
+    type: String,
+    trim: true,
+  },
+  shortDescription: {
+    type: String,
+    trim: true,
+    maxlength: 200,
+  },
+  displayOrder: {
+    type: Number,
+    default: 0,
+  },
+  iconType: {
+    type: String,
+    enum: ['gallbladder', 'ibs', 'second-opinion', 'online', 'liver', 'pancreas', 'stomach', 'custom'],
+    default: 'custom',
+  },
+  colorScheme: {
+    type: String,
+    enum: ['green', 'blue', 'purple', 'orange', 'red', 'teal', 'indigo'],
+    default: 'blue',
+  },
+  showInNavbar: {
+    type: Boolean,
+    default: false,
+  },
   status: {
     type: String,
     enum: ['draft', 'published', 'archived'],
@@ -111,6 +144,8 @@ const BookingPageSchema = new mongoose.Schema({
 BookingPageSchema.index({ slug: 1, status: 1 });
 BookingPageSchema.index({ status: 1, publishedAt: -1 });
 BookingPageSchema.index({ createdAt: -1 });
+BookingPageSchema.index({ category: 1, status: 1, displayOrder: 1 });
+BookingPageSchema.index({ showInNavbar: 1, status: 1, displayOrder: 1 });
 
 // Pre-save middleware to set publishedAt when status changes to published
 BookingPageSchema.pre('save', function() {

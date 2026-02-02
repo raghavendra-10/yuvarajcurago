@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   trackPageView,
   trackAddToCart,
@@ -13,6 +14,17 @@ import {
 import { useModal } from "@/contexts/ModalContext";
 import FooterSection from "@/components/booking-page/sections/FooterSection";
 
+// Color scheme mapping for clinic buttons
+const colorMap = {
+  green: { border: "border-green-200", hoverBorder: "hover:border-green-400", dot: "bg-green-500" },
+  blue: { border: "border-blue-200", hoverBorder: "hover:border-blue-400", dot: "bg-blue-500" },
+  purple: { border: "border-purple-200", hoverBorder: "hover:border-purple-400", dot: "bg-purple-500" },
+  orange: { border: "border-orange-200", hoverBorder: "hover:border-orange-400", dot: "bg-orange-500" },
+  red: { border: "border-red-200", hoverBorder: "hover:border-red-400", dot: "bg-red-500" },
+  teal: { border: "border-teal-200", hoverBorder: "hover:border-teal-400", dot: "bg-teal-500" },
+  indigo: { border: "border-indigo-200", hoverBorder: "hover:border-indigo-400", dot: "bg-indigo-500" },
+};
+
 export default function Home() {
   const { showAlert } = useModal();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +35,8 @@ export default function Home() {
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showSlots, setShowSlots] = useState(false);
+  const [clinics, setClinics] = useState([]);
+  const [clinicsLoading, setClinicsLoading] = useState(true);
 
   // Refs
   const genderDropdownRef = useRef(null);
@@ -74,6 +88,29 @@ export default function Home() {
   // Fetch dates on component mount
   useEffect(() => {
     fetchDates();
+  }, []);
+
+  // Fetch clinics for homepage
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        setClinicsLoading(true);
+        const response = await fetch('/api/clinics?category=myclinic');
+        const data = await response.json();
+        if (data.success && data.clinics.length > 0) {
+          setClinics(data.clinics.map(clinic => ({
+            name: clinic.name,
+            href: clinic.href,
+            colorScheme: clinic.colorScheme || 'blue',
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch clinics:', error);
+      } finally {
+        setClinicsLoading(false);
+      }
+    };
+    fetchClinics();
   }, []);
 
   // Fetch slots when date or mode changes (only if slots are visible)
@@ -496,47 +533,42 @@ export default function Home() {
       </section>
 
       {/* Specialized Clinics Section */}
-      <section className="bg-beige-50 py-6 md:py-8">
-        <div className="container mx-auto px-4">
-          <h2 className="text-lg md:text-xl font-bold text-primary-600 text-center mb-4">
-            Our Specialized Clinics
-          </h2>
-          <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
-            <a
-              href="/myclinic/gallbladder-clinic"
-              onClick={() => trackButtonClick('Gallbladder Clinic', 'home_clinic_button')}
-              className="flex items-center gap-2 bg-white border-2 border-green-200 hover:border-green-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
-            >
-              <span className="w-3 h-3 rounded-full bg-green-500"></span>
-              Gallbladder Clinic
-            </a>
-            <a
-              href="/myclinic/ibs-clinic"
-              onClick={() => trackButtonClick('IBS Clinic', 'home_clinic_button')}
-              className="flex items-center gap-2 bg-white border-2 border-blue-200 hover:border-blue-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
-            >
-              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-              IBS Clinic
-            </a>
-            <a
-              href="/myclinic/second-opinion-clinic"
-              onClick={() => trackButtonClick('Second Opinion Clinic', 'home_clinic_button')}
-              className="flex items-center gap-2 bg-white border-2 border-purple-200 hover:border-purple-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
-            >
-              <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-              Second Opinion Clinic
-            </a>
-            <a
-              href="/myclinic/online-clinic"
-              onClick={() => trackButtonClick('Online Clinic', 'home_clinic_button')}
-              className="flex items-center gap-2 bg-white border-2 border-orange-200 hover:border-orange-400 text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md"
-            >
-              <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-              Online Clinic
-            </a>
+      {clinics.length > 0 && (
+        <section className="bg-beige-50 py-6 md:py-8">
+          <div className="container mx-auto px-4">
+            <h2 className="text-lg md:text-xl font-bold text-primary-600 text-center mb-4">
+              Our Specialized Clinics
+            </h2>
+            <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+              {clinics.map((clinic) => {
+                const colors = colorMap[clinic.colorScheme] || colorMap.blue;
+                return (
+                  <Link
+                    key={clinic.href}
+                    href={clinic.href}
+                    onClick={() => trackButtonClick(clinic.name, 'home_clinic_button')}
+                    className={`flex items-center gap-2 bg-white border-2 ${colors.border} ${colors.hoverBorder} text-primary-800 font-medium px-4 py-2 rounded-lg transition-all hover:shadow-md`}
+                  >
+                    <span className={`w-3 h-3 rounded-full ${colors.dot}`}></span>
+                    {clinic.name}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+      {clinicsLoading && (
+        <section className="bg-beige-50 py-6 md:py-8">
+          <div className="container mx-auto px-4 text-center">
+            <div className="animate-pulse flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-gray-200 h-10 w-40 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Booking Form Section */}
       <section id="booking" className="container mx-auto px-4 md:px-6 py-4 md:py-12 lg:py-16">
