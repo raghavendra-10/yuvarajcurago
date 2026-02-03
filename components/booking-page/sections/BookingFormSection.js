@@ -7,6 +7,7 @@ import {
   trackButtonClick,
   trackWhatsAppClick,
   trackFormSubmit,
+  trackAppointmentBooked,
 } from "@/lib/tracking";
 import { useModal } from "@/contexts/ModalContext";
 
@@ -286,38 +287,21 @@ export default function BookingFormSection({
         setConfirmedBooking(data.booking);
 
         // Track appointment booked event with full data for GTM/Pixel
-        if (typeof window !== 'undefined') {
-          // Push to dataLayer for GTM
-          window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push({
-            event: 'appointment_booked',
-            event_category: 'booking',
-            event_label: `${trackingContext.pageSlug}_otp_booking`,
-            phone: data.booking.phone || formData.whatsapp,
-            email: data.booking.email || formData.email,
-            event_id: data.booking.eventId,
-            booking_id: data.booking.id,
-            booking_mode: formData.modeOfContact,
-            booking_date: selectedDate,
-            booking_time: selectedSlot?.time,
-            page_slug: trackingContext.pageSlug,
-            page_name: trackingContext.pageName,
-          });
+        console.log('📊 Firing appointment_booked event...', data.booking);
 
-          // Also fire gtag event
-          if (window.gtag) {
-            window.gtag('event', 'appointment_booked', {
-              event_category: 'booking',
-              event_label: `${trackingContext.pageSlug}_otp_booking`,
-              value: 0,
-              booking_mode: formData.modeOfContact,
-              booking_date: selectedDate,
-              phone: data.booking.phone || formData.whatsapp,
-              email: data.booking.email || formData.email,
-              event_id: data.booking.eventId,
-            });
-          }
-        }
+        const eventData = trackAppointmentBooked({
+          phone: data.booking.phone || formData.whatsapp,
+          email: data.booking.email || formData.email,
+          eventId: data.booking.eventId,
+          bookingId: data.booking.id,
+          mode: formData.modeOfContact,
+          date: selectedDate,
+          time: selectedSlot?.time,
+          pageSlug: trackingContext.pageSlug,
+          pageName: trackingContext.pageName,
+        });
+
+        console.log('📊 appointment_booked event data:', eventData);
 
         await showAlert({
           title: "Booking Confirmed!",

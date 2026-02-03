@@ -106,29 +106,38 @@ export async function POST(request) {
 
     await booking.save();
 
-    // Send to webhook
+    // Send to webhook - matching payment webhook format for Wylto template
     try {
-      await fetch("https://server.wylto.com/webhook/XLuJDKiLWjA5j49Y8S", {
+      const webhookResponse = await fetch("https://server.wylto.com/webhook/XLuJDKiLWjA5j49Y8S", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: bookingData.name,
           age: bookingData.age,
           gender: bookingData.gender,
+          phoneNumber: bookingData.whatsapp,
           whatsapp: bookingData.whatsapp,
           email: bookingData.email,
+          modeOfContact: bookingData.modeOfContact,
           mode: bookingData.modeOfContact,
           date: bookingData.date,
           time: bookingData.time,
-          meetLink: calendarEvent.meetLink || null,
-          calendarLink: calendarEvent.htmlLink || null,
-          eventId: calendarEvent.eventId || null,
+          meetLink: calendarEvent.meetLink || "",
+          calendarLink: calendarEvent.htmlLink || "",
+          eventId: calendarEvent.eventId || "",
           bookingTime: new Date().toISOString(),
           bookingType: 'no_payment',
+          status: "confirmed",
           pageSlug: bookingData.pageSlug,
           pageName: bookingData.pageName,
         }),
       });
+
+      if (webhookResponse.ok) {
+        console.log("Wylto webhook sent successfully for OTP booking");
+      } else {
+        console.error("Wylto webhook failed:", await webhookResponse.text());
+      }
     } catch (webhookError) {
       console.error("Webhook error:", webhookError);
       // Don't fail booking if webhook fails
