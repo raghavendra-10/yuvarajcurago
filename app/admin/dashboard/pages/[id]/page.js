@@ -22,6 +22,7 @@ import FooterConfig from "@/components/admin/booking-pages/config-forms/FooterCo
 import WhatsAppStickyButtonConfig from "@/components/admin/booking-pages/config-forms/WhatsAppStickyButtonConfig";
 import BookNowStickyButtonConfig from "@/components/admin/booking-pages/config-forms/BookNowStickyButtonConfig";
 import ProfessionalFeesConfig from "@/components/admin/booking-pages/config-forms/ProfessionalFeesConfig";
+import ChatbotConfig from "@/components/admin/booking-pages/config-forms/ChatbotConfig";
 
 // Section type definitions with metadata and SVG icons
 const SECTION_TYPES = [
@@ -306,6 +307,24 @@ const SECTION_TYPES = [
       position: "bottom-left",
       backgroundColor: "#1e40af",
       textColor: "#ffffff",
+    },
+  },
+  {
+    type: "faq_chatbot",
+    name: "FAQ Chatbot",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+    description: "Floating FAQ chatbot with clickable questions",
+    defaultConfig: {
+      enabled: true,
+      botName: "CuraGo Assistant",
+      welcomeMessage: "Hi! I'm here to help you with any questions about our consultation services. What would you like to know?",
+      primaryColor: "#059669",
+      position: "right",
+      categories: [],
     },
   },
 ];
@@ -829,6 +848,7 @@ export default function PageBuilderEditor() {
                   footer: FooterConfig,
                   whatsapp_sticky: WhatsAppStickyButtonConfig,
                   book_now_sticky: BookNowStickyButtonConfig,
+                  faq_chatbot: ChatbotConfig,
                 }[selectedSection.type];
 
                 if (!ConfigComponent) {

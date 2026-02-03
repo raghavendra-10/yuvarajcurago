@@ -13,6 +13,7 @@ import {
 } from "@/lib/tracking";
 import { useModal } from "@/contexts/ModalContext";
 import FooterSection from "@/components/booking-page/sections/FooterSection";
+import FAQChatbot from "@/components/FAQChatbot";
 
 // Color scheme mapping for clinic buttons
 const colorMap = {
@@ -1178,6 +1179,9 @@ export default function Home() {
           Chat with us
         </span>
       </a>
+
+      {/* FAQ Chatbot */}
+      <FAQChatbot currentPage="home" />
 
       {/* Footer */}
       <FooterSection

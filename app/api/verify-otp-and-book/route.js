@@ -106,17 +106,21 @@ export async function POST(request) {
 
     await booking.save();
 
-    // Send to webhook - matching payment webhook format for Wylto template
+    // Send to Wylto webhook for appointment confirmation message
     try {
-      const webhookResponse = await fetch("https://server.wylto.com/webhook/XLuJDKiLWjA5j49Y8S", {
+      // Format phone number with +91 prefix
+      const formattedPhone = bookingData.whatsapp.startsWith('+')
+        ? bookingData.whatsapp
+        : `+91${bookingData.whatsapp.replace(/^91/, '')}`;
+
+      const webhookResponse = await fetch("https://server.wylto.com/webhook/HXfOyPxtr7nv35jSYf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: bookingData.name,
+          phoneNumber: formattedPhone,
           age: bookingData.age,
           gender: bookingData.gender,
-          phoneNumber: bookingData.whatsapp,
-          whatsapp: bookingData.whatsapp,
           email: bookingData.email,
           modeOfContact: bookingData.modeOfContact,
           mode: bookingData.modeOfContact,

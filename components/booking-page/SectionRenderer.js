@@ -15,6 +15,7 @@ import FooterSection from './sections/FooterSection';
 import WhatsAppStickyButton from './sections/WhatsAppStickyButton';
 import BookNowStickyButton from './sections/BookNowStickyButton';
 import ProfessionalFeesSection from './sections/ProfessionalFeesSection';
+import FAQChatbot from '@/components/FAQChatbot';
 
 const SECTION_COMPONENTS = {
   hero_carousel: HeroCarouselSection,
@@ -33,6 +34,7 @@ const SECTION_COMPONENTS = {
   whatsapp_sticky: WhatsAppStickyButton,
   book_now_sticky: BookNowStickyButton,
   professional_fees: ProfessionalFeesSection,
+  faq_chatbot: FAQChatbot,
 };
 
 export default function SectionRenderer({ section, trackingContext, consultationFee, bookingFee }) {

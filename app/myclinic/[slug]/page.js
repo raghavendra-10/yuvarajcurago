@@ -6,6 +6,7 @@ import SectionRenderer from "@/components/booking-page/SectionRenderer";
 import WhatsAppStickyButton from "@/components/booking-page/sections/WhatsAppStickyButton";
 import FooterSection from "@/components/booking-page/sections/FooterSection";
 import BookNowStickyButton from "@/components/booking-page/sections/BookNowStickyButton";
+import FAQChatbot from "@/components/FAQChatbot";
 import { trackPageView } from "@/lib/tracking";
 
 export default function DynamicBookingPage() {
@@ -98,11 +99,12 @@ export default function DynamicBookingPage() {
 
   // Separate special sections from regular sections
   const regularSections = pageData.sections.filter(
-    (s) => s.type !== "whatsapp_sticky" && s.type !== "footer" && s.type !== "book_now_sticky"
+    (s) => s.type !== "whatsapp_sticky" && s.type !== "footer" && s.type !== "book_now_sticky" && s.type !== "faq_chatbot"
   );
   const whatsappSection = pageData.sections.find((s) => s.type === "whatsapp_sticky" && s.visible);
   const footerSection = pageData.sections.find((s) => s.type === "footer" && s.visible);
   const bookNowSection = pageData.sections.find((s) => s.type === "book_now_sticky" && s.visible);
+  const chatbotSection = pageData.sections.find((s) => s.type === "faq_chatbot" && s.visible);
 
   return (
     <div className="min-h-screen">
@@ -150,6 +152,14 @@ export default function DynamicBookingPage() {
         <BookNowStickyButton
           {...bookNowSection.config}
           trackingContext={trackingContext}
+        />
+      )}
+
+      {/* FAQ Chatbot */}
+      {chatbotSection && chatbotSection.config?.enabled !== false && (
+        <FAQChatbot
+          {...chatbotSection.config}
+          currentPage={slug}
         />
       )}
     </div>
