@@ -57,8 +57,12 @@ export default function Home() {
     gender: "",
     email: "",
     whatsapp: "",
-    modeOfContact: "online",
+    modeOfContact: "",
+    modeId: "",
   });
+
+  // Consultation modes state
+  const [consultationModes, setConsultationModes] = useState([]);
 
   // Track page view and scroll on component mount
   useEffect(() => {
@@ -91,6 +95,28 @@ export default function Home() {
     fetchDates();
   }, []);
 
+  // Fetch consultation modes on mount
+  useEffect(() => {
+    const fetchConsultationModes = async () => {
+      try {
+        const response = await fetch('/api/consultation-modes');
+        const data = await response.json();
+        if (data.success && data.modes.length > 0) {
+          setConsultationModes(data.modes);
+          // Auto-select first mode
+          setFormData(prev => ({
+            ...prev,
+            modeOfContact: data.modes[0].name,
+            modeId: data.modes[0]._id,
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching consultation modes:", error);
+      }
+    };
+    fetchConsultationModes();
+  }, []);
+
   // Fetch clinics for homepage
   useEffect(() => {
     const fetchClinics = async () => {
@@ -116,10 +142,10 @@ export default function Home() {
 
   // Fetch slots when date or mode changes (only if slots are visible)
   useEffect(() => {
-    if (selectedDate && showSlots) {
+    if (selectedDate && showSlots && formData.modeId) {
       fetchSlots();
     }
-  }, [selectedDate, formData.modeOfContact, showSlots]);
+  }, [selectedDate, formData.modeId, showSlots]);
 
   // Auto-scroll carousel
   useEffect(() => {
@@ -165,12 +191,12 @@ export default function Home() {
   };
 
   const fetchSlots = async () => {
-    if (!selectedDate) return;
+    if (!selectedDate || !formData.modeId) return;
 
     setIsLoadingSlots(true);
     try {
       const response = await fetch(
-        `/api/available-slots?date=${selectedDate}&mode=${formData.modeOfContact}`
+        `/api/available-slots?date=${selectedDate}&modeId=${formData.modeId}`
       );
       const data = await response.json();
       if (data.success) {
@@ -199,7 +225,8 @@ export default function Home() {
       formData.gender.trim() !== "" &&
       formData.email.trim() !== "" &&
       formData.whatsapp.trim() !== "" &&
-      formData.modeOfContact.trim() !== ""
+      formData.modeOfContact.trim() !== "" &&
+      formData.modeId !== ""
     );
   };
 
@@ -729,67 +756,63 @@ export default function Home() {
                   Mode of Consultation *
                 </label>
                 <div className="flex flex-col gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({ ...prev, modeOfContact: "online" }));
-                      setSelectedSlot(null);
-                      setShowSlots(false);
-                    }}
-                    className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
-                      formData.modeOfContact === "online"
-                        ? "bg-primary-600 text-white border-primary-600 shadow-md"
-                        : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <span>Online Video Consult</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData((prev) => ({ ...prev, modeOfContact: "in-clinic" }));
-                      setSelectedSlot(null);
-                      setShowSlots(false);
-                    }}
-                    className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
-                      formData.modeOfContact === "in-clinic"
-                        ? "bg-primary-600 text-white border-primary-600 shadow-md"
-                        : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                      <span>In-Clinic at Chembur</span>
-                    </div>
-                  </button>
+                  {consultationModes.map((mode) => (
+                    <button
+                      key={mode._id}
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          modeOfContact: mode.name,
+                          modeId: mode._id,
+                        }));
+                        setSelectedSlot(null);
+                        setShowSlots(false);
+                      }}
+                      className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 ${
+                        formData.modeId === mode._id
+                          ? "text-white shadow-md"
+                          : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
+                      }`}
+                      style={formData.modeId === mode._id ? {
+                        backgroundColor: mode.color || '#059669',
+                        borderColor: mode.color || '#059669',
+                      } : {}}
+                    >
+                      <div className="flex items-center gap-2">
+                        {mode.name === "online" ? (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
+                          </svg>
+                        )}
+                        <span>{mode.displayName || mode.name}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
