@@ -5,11 +5,11 @@ export default function FinalCTASection() {
     <Section bgColor="bg-primary-600" id="contact">
       <div className="max-w-4xl mx-auto text-center text-white">
         <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-          Need Expert Surgical Care?
+          Need Expert GI Surgical Care?
         </h2>
 
         <p className="text-xl md:text-2xl mb-8 text-beige-200">
-          Schedule a consultation to discuss your condition and treatment options with Dr. Yuvaraj.
+          Expert Surgical Gastroenterologist with 8+ years of experience
         </p>
 
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 md:p-12 mb-8 border border-accent-400/30">

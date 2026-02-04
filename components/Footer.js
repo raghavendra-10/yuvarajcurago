@@ -8,10 +8,10 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-2xl font-bold text-beige-300 mb-4">
-              Priority Circle 365
+              Dr Yuvaraj T
             </h3>
             <p className="text-beige-200 mb-4 max-w-md">
-              Your 365-day partnership for gut health with expert surgical gastroenterologist Dr. Yuvaraj T in Mumbai.
+              Expert Surgical Gastroenterologist specializing in GI & HPB Surgery, Laparoscopic & GI Oncosurgery in Mumbai.
             </p>
             <div className="flex gap-4">
               <a
@@ -31,23 +31,28 @@ export default function Footer() {
             <h4 className="text-beige-300 font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#gut-brain-index" className="hover:text-accent-400 transition-colors">
-                  Free Assessment
+                <a href="/gbsi" className="hover:text-accent-400 transition-colors">
+                  GBSI
                 </a>
               </li>
               <li>
-                <a href="#science" className="hover:text-accent-400 transition-colors">
-                  Gut-Brain Science
+                <a href="/myclinic" className="hover:text-accent-400 transition-colors">
+                  My Clinic
                 </a>
               </li>
               <li>
-                <a href="#priority-circle" className="hover:text-accent-400 transition-colors">
-                  Membership Benefits
+                <a href="/forum" className="hover:text-accent-400 transition-colors">
+                  Forum
                 </a>
               </li>
               <li>
-                <a href="#about-doctor" className="hover:text-accent-400 transition-colors">
-                  About Dr. Yuvaraj
+                <a href="/priority-connect" className="hover:text-accent-400 transition-colors">
+                  Priority Connect
+                </a>
+              </li>
+              <li>
+                <a href="/about" className="hover:text-accent-400 transition-colors">
+                  About
                 </a>
               </li>
             </ul>
@@ -58,7 +63,7 @@ export default function Footer() {
         <div className="pt-8 border-t border-primary-800">
           <div className="flex flex-col md:flex-row justify-center items-center gap-4">
             <p className="text-sm text-beige-200">
-              © {currentYear} Priority Circle 365 by CuraGo. All rights reserved.
+              © {currentYear} Dr Yuvaraj T. All rights reserved.
             </p>
           </div>
         </div>

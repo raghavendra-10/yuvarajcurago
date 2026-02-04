@@ -12,7 +12,7 @@ import {
   trackFormSubmit
 } from "@/lib/tracking";
 import { useModal } from "@/contexts/ModalContext";
-import FooterSection from "@/components/booking-page/sections/FooterSection";
+import Footer from "@/components/Footer";
 import FAQChatbot from "@/components/FAQChatbot";
 
 // Color scheme mapping for clinic buttons
@@ -1207,22 +1207,7 @@ export default function Home() {
       <FAQChatbot currentPage="home" />
 
       {/* Footer */}
-      <FooterSection
-        companyName="CuraGo"
-        tagline="Your Health, Our Priority"
-        address="SRV Hospital, Tilak Nagar, Chembur, Mumbai"
-        phone="+91 7021227203"
-        email="team@curago.in"
-        showSocialLinks={false}
-        showQuickLinks={true}
-        quickLinks={[
-          { text: "Home", url: "/" },
-          { text: "Book Consultation", url: "#booking" },
-          { text: "About Dr. Yuvaraj", url: "/about" },
-        ]}
-        backgroundColor="primary"
-        trackingContext={{ pageName: 'Book Consultation - Home', pageSlug: 'home' }}
-      />
+      <Footer />
     </div>
   );
 }
